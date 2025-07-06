@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,7 +23,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { Exercise } from '@/lib/types';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef, type ChangeEvent } from 'react';
+import Image from 'next/image';
+import { Upload, X } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(1, { message: 'Название обязательно.' }),
@@ -31,7 +34,7 @@ const formSchema = z.object({
   type: z.enum(['weighted', 'timed-distance'], {
     required_error: 'Выберите тип.',
   }),
-  imageUrl: z.string().url({ message: "Пожалуйста, введите действительный URL." }).optional().or(z.literal('')),
+  imageUrl: z.string().optional(),
   color: z.string().regex(/^#([0-9a-f]{3,6})$/i, "Введите валидный HEX-код цвета (например, #c0ffee)").optional().or(z.literal('')),
   defaultSets: z.coerce.number().optional(),
   defaultReps: z.coerce.number().optional(),
@@ -48,6 +51,9 @@ type CreateExerciseFormProps = {
 };
 
 export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: CreateExerciseFormProps) {
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -83,6 +89,11 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
             defaultDistance: initialData.defaultDistance,
             defaultRestDuration: initialData.defaultRestDuration,
         });
+        if (initialData.imageUrl) {
+            setImagePreview(initialData.imageUrl);
+        } else {
+            setImagePreview(null);
+        }
     } else {
         form.reset({
             name: '',
@@ -98,8 +109,30 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
             defaultDistance: undefined,
             defaultRestDuration: undefined,
         });
+        setImagePreview(null);
     }
   }, [initialData, form]);
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setImagePreview(result);
+        form.setValue('imageUrl', result, { shouldValidate: true });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    form.setValue('imageUrl', '', { shouldValidate: true });
+    if(fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     onFormSubmit(values, initialData?.id);
@@ -153,19 +186,37 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
           )}
         />
         
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>URL изображения (необязательно)</FormLabel>
-              <FormControl>
-                <Input placeholder="https://placehold.co/600x400.png" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <FormItem>
+          <FormLabel>Изображение (необязательно)</FormLabel>
+          <div className="flex items-center gap-4">
+            <div className="relative w-32 h-32 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
+              {imagePreview ? (
+                <>
+                  <Image src={imagePreview} alt="Предпросмотр" fill className="object-cover rounded-md" />
+                  <Button type="button" size="icon" variant="destructive" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={handleRemoveImage}>
+                    <X className="h-4 w-4"/>
+                  </Button>
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground">Нет фото</span>
+              )}
+            </div>
+            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+              <Upload className="mr-2 h-4 w-4" />
+              Выбрать файл
+            </Button>
+            <FormControl>
+              <Input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/png, image/jpeg, image/gif"
+                onChange={handleFileChange}
+              />
+            </FormControl>
+          </div>
+          <FormMessage>{form.formState.errors.imageUrl?.message}</FormMessage>
+        </FormItem>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
