@@ -74,6 +74,12 @@ export default function WorkoutPlayerPage() {
     }
   }, [workout, currentExerciseIndex]);
 
+  const handlePrev = useCallback(() => {
+    if (currentExerciseIndex > 0) {
+      setExercise(currentExerciseIndex - 1);
+    }
+  }, [currentExerciseIndex]);
+
 
   // Auto-start timer when exercise changes
   useEffect(() => {
