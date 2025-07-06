@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { workouts as initialWorkouts, exercises } from '@/lib/data';
+import { workouts as initialWorkouts, exercises as initialExercises } from '@/lib/data';
 import type { Workout, Exercise } from '@/lib/types';
 import { PlusCircle, ArrowRight, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +40,7 @@ import {
   } from "@/components/ui/dropdown-menu"
 import { CreateWorkoutForm } from '@/components/forms/create-workout-form';
 
-function WorkoutCard({ workout, onEdit, onDelete }: { workout: Workout, onEdit: () => void, onDelete: () => void }) {
+function WorkoutCard({ workout, exercises, onEdit, onDelete }: { workout: Workout, exercises: Exercise[], onEdit: () => void, onDelete: () => void }) {
   const workoutExercises = workout.exercises
     .map((we) => exercises.find((e) => e.id === we.exerciseId))
     .filter((e): e is Exercise => !!e);
@@ -97,18 +97,49 @@ function WorkoutCard({ workout, onEdit, onDelete }: { workout: Workout, onEdit: 
 }
 
 export default function WorkoutsPage() {
-  const [workouts, setWorkouts] = useState<Workout[]>(initialWorkouts);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [deletingWorkoutId, setDeletingWorkoutId] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const savedWorkouts = localStorage.getItem('workouts');
+      if (savedWorkouts) {
+        setWorkouts(JSON.parse(savedWorkouts));
+      } else {
+        setWorkouts(initialWorkouts);
+      }
+
+      const savedExercises = localStorage.getItem('exercises');
+      if (savedExercises) {
+        setExercises(JSON.parse(savedExercises));
+      } else {
+        setExercises(initialExercises);
+      }
+    } catch (error) {
+      console.error("Failed to load data from localStorage", error);
+      setWorkouts(initialWorkouts);
+      setExercises(initialExercises);
+    }
+    setIsDataLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (isDataLoaded) {
+      localStorage.setItem('workouts', JSON.stringify(workouts));
+    }
+  }, [workouts, isDataLoaded]);
 
   const handleSaveWorkout = (data: Omit<Workout, 'id'>, id?: string) => {
     if (id) {
         setWorkouts(prev => prev.map(w => w.id === id ? { ...w, ...data, id: w.id } : w));
     } else {
         const newWorkout: Workout = {
-            id: `w${workouts.length + 1 + Math.random()}`,
+            id: `w${Date.now()}`,
             ...data,
         };
         setWorkouts((prev) => [...prev, newWorkout]);
@@ -145,6 +176,9 @@ export default function WorkoutsPage() {
     setEditingWorkout(null);
   };
 
+  if (!isDataLoaded) {
+    return <div>Загрузка тренировок...</div>;
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -176,6 +210,7 @@ export default function WorkoutsPage() {
           <WorkoutCard 
             key={workout.id} 
             workout={workout} 
+            exercises={exercises}
             onEdit={() => handleOpenEditDialog(workout)}
             onDelete={() => handleOpenDeleteAlert(workout.id)}
             />

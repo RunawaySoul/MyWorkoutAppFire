@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from 'next/link';
-import { workouts, exercises } from "@/lib/data";
-import type { Workout } from "@/lib/types";
+import { workouts as initialWorkouts, exercises as initialExercises } from "@/lib/data";
+import type { Workout, Exercise } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -14,20 +14,40 @@ import { ChevronLeft, ChevronRight, Timer, Flame, CheckCircle } from "lucide-rea
 export default function WorkoutPlayerPage() {
   const params = useParams();
   const [workout, setWorkout] = useState<Workout | null>(null);
+  const [allExercises, setAllExercises] = useState<Exercise[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   useEffect(() => {
-    const foundWorkout = workouts.find((w) => w.id === params.id);
-    setWorkout(foundWorkout || null);
+    try {
+      const savedWorkouts = localStorage.getItem('workouts');
+      const workouts: Workout[] = savedWorkouts ? JSON.parse(savedWorkouts) : initialWorkouts;
+      const foundWorkout = workouts.find((w) => w.id === params.id);
+      setWorkout(foundWorkout || null);
+
+      const savedExercises = localStorage.getItem('exercises');
+      const exercises: Exercise[] = savedExercises ? JSON.parse(savedExercises) : initialExercises;
+      setAllExercises(exercises);
+    } catch (error) {
+      console.error("Failed to load data from localStorage", error);
+      const foundWorkout = initialWorkouts.find((w) => w.id === params.id);
+      setWorkout(foundWorkout || null);
+      setAllExercises(initialExercises);
+    }
+    setIsDataLoaded(true);
   }, [params.id]);
 
-  if (!workout) {
+  if (!isDataLoaded) {
     return <div>Загрузка тренировки...</div>;
+  }
+
+  if (!workout) {
+    return <div>Тренировка не найдена.</div>;
   }
   
   const currentWorkoutExercise = workout.exercises[currentExerciseIndex];
-  const currentExercise = exercises.find(e => e.id === currentWorkoutExercise.exerciseId);
+  const currentExercise = allExercises.find(e => e.id === currentWorkoutExercise.exerciseId);
 
   const handleNext = () => {
     if (currentExerciseIndex < workout.exercises.length - 1) {
@@ -39,7 +59,7 @@ export default function WorkoutPlayerPage() {
 
   const handlePrev = () => {
     if (currentExerciseIndex > 0) {
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
+      setCurrentExerciseIndex(currentExerciseIndex - 1);
     }
   };
 

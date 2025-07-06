@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
@@ -42,11 +42,13 @@ import { CreateExerciseForm } from '@/components/forms/create-exercise-form';
 function ExerciseCard({ 
     exercise, 
     onEdit, 
-    onDelete 
+    onDelete,
+    onViewDetails
 }: { 
     exercise: Exercise;
     onEdit: () => void;
     onDelete: () => void;
+    onViewDetails: () => void;
 }) {
   return (
     <Card className="flex flex-col border-t-4" style={{ borderColor: exercise.color || 'hsl(var(--primary))' }}>
@@ -86,13 +88,13 @@ function ExerciseCard({
           {exercise.muscleGroup}
         </Badge>
         {exercise.description && (
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
                 {exercise.description}
             </p>
         )}
       </CardContent>
       <CardFooter className="p-4 pt-0">
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={onViewDetails}>
           Подробнее
         </Button>
       </CardFooter>
@@ -101,11 +103,34 @@ function ExerciseCard({
 }
 
 export default function ExercisesPage() {
-  const [exercises, setExercises] = useState<Exercise[]>(initialExercises);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [deletingExerciseId, setDeletingExerciseId] = useState<string | null>(null);
+  const [viewingExercise, setViewingExercise] = useState<Exercise | null>(null);
+
+  useEffect(() => {
+    try {
+      const savedExercises = localStorage.getItem('exercises');
+      if (savedExercises) {
+        setExercises(JSON.parse(savedExercises));
+      } else {
+        setExercises(initialExercises);
+      }
+    } catch (error) {
+      console.error("Failed to load exercises from localStorage", error);
+      setExercises(initialExercises);
+    }
+    setIsDataLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (isDataLoaded) {
+      localStorage.setItem('exercises', JSON.stringify(exercises));
+    }
+  }, [exercises, isDataLoaded]);
 
   const handleSaveExercise = (
     data: Omit<Exercise, 'id' | 'imageUrl' | 'aiHint'>,
@@ -117,7 +142,7 @@ export default function ExercisesPage() {
       );
     } else {
       const newExercise: Exercise = {
-        id: `ex${exercises.length + 1 + Math.random()}`,
+        id: `ex${Date.now()}`,
         ...data,
         imageUrl: 'https://placehold.co/600x400.png',
         aiHint: data.name.toLowerCase().split(' ').slice(0, 2).join(' '),
@@ -137,6 +162,10 @@ export default function ExercisesPage() {
     setEditingExercise(exercise);
     setIsDialogOpen(true);
   };
+  
+  const handleOpenViewDialog = (exercise: Exercise) => {
+    setViewingExercise(exercise);
+  };
 
   const handleOpenDeleteAlert = (exerciseId: string) => {
     setDeletingExerciseId(exerciseId);
@@ -155,6 +184,10 @@ export default function ExercisesPage() {
     setIsDialogOpen(false);
     setEditingExercise(null);
   };
+
+  if (!isDataLoaded) {
+    return <div>Загрузка упражнений...</div>;
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -189,6 +222,7 @@ export default function ExercisesPage() {
             exercise={exercise} 
             onEdit={() => handleOpenEditDialog(exercise)}
             onDelete={() => handleOpenDeleteAlert(exercise.id)}
+            onViewDetails={() => handleOpenViewDialog(exercise)}
             />
         ))}
       </div>
@@ -206,6 +240,36 @@ export default function ExercisesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      <Dialog open={!!viewingExercise} onOpenChange={(isOpen) => !isOpen && setViewingExercise(null)}>
+        <DialogContent className="max-w-md">
+            {viewingExercise && (
+                <>
+                    <DialogHeader>
+                        <DialogTitle>{viewingExercise.name}</DialogTitle>
+                        <DialogDescription>{viewingExercise.muscleGroup}</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="relative aspect-video w-full">
+                            <Image src={viewingExercise.imageUrl} alt={viewingExercise.name} fill className="rounded-md object-cover" data-ai-hint={viewingExercise.aiHint} />
+                        </div>
+                        {viewingExercise.description && <p className="text-sm text-muted-foreground">{viewingExercise.description}</p>}
+                        <div className="space-y-2 rounded-md border p-4 bg-muted/50">
+                            <h4 className="font-medium text-sm text-foreground">Значения по умолчанию:</h4>
+                            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                                {viewingExercise.defaultSets && <li>Подходы: {viewingExercise.defaultSets}</li>}
+                                {viewingExercise.defaultReps && <li>Повторения: {viewingExercise.defaultReps}</li>}
+                                {viewingExercise.defaultWeight !== undefined && <li>Вес: {viewingExercise.defaultWeight} кг</li>}
+                                {viewingExercise.defaultDuration && <li>Длительность: {viewingExercise.defaultDuration} сек</li>}
+                                {viewingExercise.defaultDistance && <li>Дистанция: {viewingExercise.defaultDistance} км</li>}
+                                {viewingExercise.defaultRestDuration && <li>Отдых: {viewingExercise.defaultRestDuration} сек</li>}
+                            </ul>
+                        </div>
+                    </div>
+                </>
+            )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
