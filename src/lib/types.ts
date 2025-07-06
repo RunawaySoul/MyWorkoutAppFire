@@ -45,7 +45,7 @@ export interface WorkoutLog {
 }
 
 export interface BodyMeasurement {
-  date: string; // YYYY-MM-DD
+  datetime: string; // ISO 8601 format
   weight: number;
 }
 

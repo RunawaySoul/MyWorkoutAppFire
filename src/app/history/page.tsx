@@ -23,9 +23,8 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartConfig,
 } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -58,24 +57,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { getAppData, saveAppData } from "@/lib/actions";
 import type { AppData, BodyMeasurement, WorkoutLog } from "@/lib/types";
-import { format, parseISO, differenceInMinutes, sub, add, startOfDay } from "date-fns";
+import { format, parseISO, differenceInMinutes, sub, add, startOfDay, set } from "date-fns";
 import { ru } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, MoreVertical, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
 
 const chartConfig = {
   weight: {
     label: "Вес (кг)",
     color: "hsl(var(--primary))",
   },
-} satisfies ChartConfig;
+};
 
 const addMeasurementSchema = z.object({
     date: z.date({
         required_error: "Дата обязательна.",
     }),
+    hours: z.coerce.number().min(0).max(23),
+    minutes: z.coerce.number().min(0).max(59),
     weight: z.coerce.number().positive("Вес должен быть положительным числом."),
 });
 
@@ -91,10 +91,13 @@ export default function HistoryPage() {
   const [dateRange, setDateRange] = useState({ type: 'months' as DateRangeType, value: 3, end: startOfDay(new Date()) });
   const { toast } = useToast();
 
+  const now = new Date();
   const form = useForm<z.infer<typeof addMeasurementSchema>>({
     resolver: zodResolver(addMeasurementSchema),
     defaultValues: {
-        date: new Date(),
+        date: now,
+        hours: now.getHours(),
+        minutes: now.getMinutes(),
         weight: undefined,
     },
   });
@@ -158,21 +161,26 @@ export default function HistoryPage() {
   
   const handleAddBodyMeasurement = (values: z.infer<typeof addMeasurementSchema>) => {
     if(!appData) return;
-    const dateKey = format(values.date, 'yyyy-MM-dd');
-    const existingIndex = bodyMeasurements.findIndex(m => m.date === dateKey);
-    let newMeasurements: BodyMeasurement[];
 
-    if(existingIndex > -1) {
-        newMeasurements = [...bodyMeasurements];
-        newMeasurements[existingIndex] = { date: dateKey, weight: values.weight };
-    } else {
-        newMeasurements = [...bodyMeasurements, { date: dateKey, weight: values.weight }];
-    }
+    const combinedDateTime = set(values.date, { hours: values.hours, minutes: values.minutes, seconds: 0, milliseconds: 0 });
+
+    const newMeasurement: BodyMeasurement = {
+        datetime: combinedDateTime.toISOString(),
+        weight: values.weight,
+    };
+    
+    const newMeasurements = [...bodyMeasurements, newMeasurement];
     
     updateAppData({ ...appData, bodyMeasurements: newMeasurements });
     setIsAddWeightDialogOpen(false);
-    form.reset({date: new Date(), weight: undefined});
-    toast({ title: "Измерения обновлены", description: `Вес ${values.weight}кг добавлен на ${format(values.date, "PPP", { locale: ru })}.` });
+    const rightNow = new Date();
+    form.reset({
+        date: rightNow,
+        hours: rightNow.getHours(),
+        minutes: rightNow.getMinutes(),
+        weight: undefined
+    });
+    toast({ title: "Измерения обновлены", description: `Вес ${values.weight}кг добавлен на ${format(combinedDateTime, "PPP p", { locale: ru })}.` });
   };
 
   const changeDateRange = (direction: 'prev' | 'next') => {
@@ -185,12 +193,20 @@ export default function HistoryPage() {
   };
 
   const chartData = useMemo(() => {
+    if (!bodyMeasurements) return [];
     const startDate = sub(dateRange.end, { [dateRange.type]: dateRange.value });
-    return bodyMeasurements
-        .map(m => ({ ...m, dateObj: parseISO(m.date) }))
-        .filter(m => m.dateObj >= startDate && m.dateObj <= dateRange.end)
-        .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
-        .map(m => ({ date: format(m.dateObj, 'MMM d', { locale: ru }), weight: m.weight }));
+    const endDate = add(dateRange.end, { days: 1 });
+
+    const filteredMeasurements = bodyMeasurements
+      .map(m => ({ ...m, datetimeObj: parseISO(m.datetime) }))
+      .filter(m => m.datetimeObj >= startDate && m.datetimeObj < endDate)
+      .sort((a, b) => a.datetimeObj.getTime() - b.datetimeObj.getTime());
+    
+    return filteredMeasurements.map(m => ({
+        timestamp: m.datetimeObj.getTime(),
+        weight: m.weight,
+        displayDate: format(m.datetimeObj, 'PPP p', { locale: ru })
+    }));
   }, [bodyMeasurements, dateRange]);
   
   if (!appData) {
@@ -337,6 +353,50 @@ export default function HistoryPage() {
                                         </FormItem>
                                     )}
                                 />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="hours"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Часы</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {Array.from({ length: 24 }, (_, i) => (
+                                                            <SelectItem key={i} value={String(i)}>{String(i).padStart(2, '0')}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="minutes"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Минуты</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {Array.from({ length: 60 }, (_, i) => (
+                                                            <SelectItem key={i} value={String(i)}>{String(i).padStart(2, '0')}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
                                 <FormField
                                     control={form.control}
                                     name="weight"
@@ -378,7 +438,10 @@ export default function HistoryPage() {
                 <LineChart data={chartData}>
                   <CartesianGrid vertical={false} />
                   <XAxis
-                    dataKey="date"
+                    dataKey="timestamp"
+                    type="number"
+                    domain={['dataMin', 'dataMax']}
+                    tickFormatter={(unixTime) => format(new Date(unixTime), 'MMM d', { locale: ru })}
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
@@ -393,7 +456,16 @@ export default function HistoryPage() {
                   />
                   <ChartTooltip
                     cursor={false}
-                    content={<ChartTooltipContent indicator="dot" />}
+                    content={<ChartTooltipContent
+                        formatter={(value) => (`${value} кг`)}
+                        labelFormatter={(label, payload) => {
+                             if (payload && payload.length) {
+                                return payload[0].payload.displayDate;
+                            }
+                            return '';
+                        }}
+                        indicator="dot" 
+                    />}
                   />
                   <Line
                     dataKey="weight"
