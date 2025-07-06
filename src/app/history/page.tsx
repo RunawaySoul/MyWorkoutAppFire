@@ -1,4 +1,6 @@
-import * as React from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -22,8 +24,9 @@ import {
 } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { getAppData } from "@/lib/actions";
+import type { AppData } from "@/lib/types";
 import { format, parseISO, differenceInMinutes } from "date-fns";
-import { ru } from 'date-fns/locale';
+import { ru } from "date-fns/locale";
 
 const chartConfig = {
   weight: {
@@ -32,15 +35,35 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export default async function HistoryPage() {
-  const { workouts, workoutLogs, bodyMeasurements } = await getAppData();
+export default function HistoryPage() {
+  const [appData, setAppData] = useState<AppData | null>(null);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const data = await getAppData();
+        setAppData(data);
+      } catch (error) {
+        console.error("Failed to load history data:", error);
+      }
+    }
+    loadData();
+  }, []);
+
+  if (!appData) {
+    return <div>Загрузка истории...</div>;
+  }
+
+  const { workouts, workoutLogs, bodyMeasurements } = appData;
 
   const chartData = bodyMeasurements.map((m) => ({
     date: format(new Date(m.date), "MMM d", { locale: ru }),
     weight: m.weight,
   }));
-  
-  const completedLogs = workoutLogs.filter(log => log.status === 'completed' && log.endTime);
+
+  const completedLogs = workoutLogs.filter(
+    (log) => log.status === "completed" && log.endTime
+  );
 
   return (
     <div className="grid gap-6 lg:grid-cols-5">
@@ -48,9 +71,7 @@ export default async function HistoryPage() {
         <Card>
           <CardHeader>
             <CardTitle className="font-headline">Журнал тренировок</CardTitle>
-            <CardDescription>
-              История ваших завершенных тренировок.
-            </CardDescription>
+            <CardDescription>История ваших завершенных тренировок.</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -65,7 +86,10 @@ export default async function HistoryPage() {
                 {completedLogs.length > 0 ? (
                   completedLogs.map((log) => {
                     const workout = workouts.find((w) => w.id === log.workoutId);
-                    const duration = differenceInMinutes(parseISO(log.endTime!), parseISO(log.date));
+                    const duration = differenceInMinutes(
+                      parseISO(log.endTime!),
+                      parseISO(log.date)
+                    );
                     return (
                       <TableRow key={log.id}>
                         <TableCell className="font-medium">
@@ -74,9 +98,7 @@ export default async function HistoryPage() {
                         <TableCell>
                           {format(parseISO(log.date), "PPP", { locale: ru })}
                         </TableCell>
-                        <TableCell className="text-right">
-                          {duration} мин
-                        </TableCell>
+                        <TableCell className="text-right">{duration} мин</TableCell>
                       </TableRow>
                     );
                   })
@@ -133,9 +155,11 @@ export default async function HistoryPage() {
                 </LineChart>
               </ChartContainer>
             ) : (
-                <div className="flex h-[250px] w-full items-center justify-center rounded-md border border-dashed bg-muted/50">
-                    <p className="text-sm text-muted-foreground">Нет данных о весе для отображения.</p>
-                </div>
+              <div className="flex h-[250px] w-full items-center justify-center rounded-md border border-dashed bg-muted/50">
+                <p className="text-sm text-muted-foreground">
+                  Нет данных о весе для отображения.
+                </p>
+              </div>
             )}
           </CardContent>
         </Card>

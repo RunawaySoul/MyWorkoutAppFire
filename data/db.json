@@ -184,6 +184,19 @@
       ]
     }
   ],
-  "workoutLogs": [],
+  "workoutLogs": [
+    {
+      "id": "log1751806094236",
+      "workoutId": "w1",
+      "date": "2025-07-06T12:48:14.236Z",
+      "status": "in-progress",
+      "currentExerciseIndex": 2,
+      "exerciseStatuses": {
+        "0": "completed",
+        "1": "completed",
+        "2": "pending"
+      }
+    }
+  ],
   "bodyMeasurements": []
 }
