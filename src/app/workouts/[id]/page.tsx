@@ -7,9 +7,9 @@ import Link from 'next/link';
 import { workouts as initialWorkouts, exercises as initialExercises } from "@/lib/data";
 import type { Workout, Exercise } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, Timer, Flame, CheckCircle, Check, X } from "lucide-react";
+import { ChevronLeft, Timer, Flame, CheckCircle, Check, X, Plus, SkipForward } from "lucide-react";
 import { getAppData } from "@/lib/actions";
 
 type ExerciseStatus = 'pending' | 'completed' | 'skipped';
@@ -86,7 +86,8 @@ export default function WorkoutPlayerPage() {
     setExerciseTimerActive(false);
 
     const restDuration = workout.exercises[currentExerciseIndex]?.restDuration;
-    if (restDuration && restDuration > 0) {
+    // Do not rest after the last exercise
+    if (restDuration && restDuration > 0 && currentExerciseIndex < workout.exercises.length - 1) {
       setRestTimeLeft(restDuration);
       setIsResting(true);
     } else {
@@ -151,6 +152,15 @@ export default function WorkoutPlayerPage() {
       setExerciseTimerActive(false);
       setIsResting(false); // Ensure rest is cancelled if skipping
       handleNext();
+  };
+
+  const handleExtendRest = () => {
+    setRestTimeLeft(prev => prev + 15);
+  };
+  
+  const handleSkipRest = () => {
+    setIsResting(false);
+    handleNext();
   };
   
   const handleToggleExerciseTimer = () => {
@@ -233,10 +243,19 @@ export default function WorkoutPlayerPage() {
                   <CardTitle className="text-3xl font-headline">Отдых</CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-grow flex flex-col items-center justify-center">
               <p className="text-8xl font-bold my-4 text-primary">{formatTime(restTimeLeft)}</p>
               <p className="text-muted-foreground">Следующее упражнение: {getNextExerciseName()}</p>
             </CardContent>
+            <CardFooter className="flex gap-2">
+                <Button variant="outline" onClick={handleExtendRest}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Продлить (+15с)
+                </Button>
+                <Button onClick={handleSkipRest}>
+                    Пропустить <SkipForward className="ml-2 h-4 w-4" />
+                </Button>
+            </CardFooter>
         </Card>
       </div>
     )
