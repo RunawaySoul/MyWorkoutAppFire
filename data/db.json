@@ -89,6 +89,18 @@
       "defaultReps": 12,
       "defaultWeight": 15,
       "defaultRestDuration": 60
+    },
+    {
+      "id": "ex1751801491745",
+      "name": "Прыжки из приседа (присед)",
+      "description": "",
+      "muscleGroup": "Ноги",
+      "type": "timed-distance",
+      "color": "#34d399",
+      "defaultReps": 1,
+      "defaultDuration": 45,
+      "imageUrl": "https://placehold.co/600x400.png",
+      "aiHint": "прыжки из"
     }
   ],
   "workouts": [
@@ -159,6 +171,21 @@
           "sets": 3,
           "duration": 60,
           "reps": 1
+        }
+      ]
+    },
+    {
+      "id": "w1751801665742",
+      "name": "Силовая",
+      "description": "Силовая",
+      "exercises": [
+        {
+          "exerciseId": "ex1751801491745",
+          "sets": 1,
+          "reps": 1,
+          "duration": 45,
+          "distance": 1,
+          "restDuration": 10
         }
       ]
     }
