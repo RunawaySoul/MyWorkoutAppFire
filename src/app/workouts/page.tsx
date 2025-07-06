@@ -11,9 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { workouts as initialWorkouts, exercises as initialExercises } from '@/lib/data';
-import type { Workout, Exercise } from '@/lib/types';
-import { PlusCircle, ArrowRight, MoreVertical, Edit, Trash2, Info } from 'lucide-react';
+import type { Workout, Exercise, AppData, WorkoutLog } from '@/lib/types';
+import { PlusCircle, ArrowRight, MoreVertical, Edit, Trash2, Info, RotateCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -39,11 +38,26 @@ import {
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu"
 import { CreateWorkoutForm } from '@/components/forms/create-workout-form';
-import { getAppData, saveWorkouts } from '@/lib/actions';
+import { getAppData, saveAppData } from '@/lib/actions';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-
-function WorkoutCard({ workout, exercises, onEdit, onDelete, onView }: { workout: Workout, exercises: Exercise[], onEdit: () => void, onDelete: () => void, onView: () => void }) {
+function WorkoutCard({ 
+    workout, 
+    exercises, 
+    inProgressLog,
+    onEdit, 
+    onDelete, 
+    onView,
+    onStartOver 
+}: { 
+    workout: Workout, 
+    exercises: Exercise[], 
+    inProgressLog?: WorkoutLog | null,
+    onEdit: () => void, 
+    onDelete: () => void, 
+    onView: () => void,
+    onStartOver: () => void
+}) {
   const workoutExercises = workout.exercises
     .map((we) => exercises.find((e) => e.id === we.exerciseId))
     .filter((e): e is Exercise => !!e);
@@ -75,6 +89,12 @@ function WorkoutCard({ workout, exercises, onEdit, onDelete, onView }: { workout
                   <Edit className="mr-2 h-4 w-4" />
                   Редактировать
                 </DropdownMenuItem>
+                {inProgressLog && (
+                    <DropdownMenuItem onClick={onStartOver}>
+                      <RotateCw className="mr-2 h-4 w-4" />
+                      Начать заново
+                    </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Удалить
@@ -93,9 +113,9 @@ function WorkoutCard({ workout, exercises, onEdit, onDelete, onView }: { workout
         </div>
       </CardContent>
       <CardFooter>
-        <Button asChild>
+        <Button asChild className="w-full">
           <Link href={`/workouts/${workout.id}`}>
-            Начать тренировку <ArrowRight className="ml-2 h-4 w-4" />
+            {inProgressLog ? 'Продолжить тренировку' : 'Начать тренировку'} <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>
       </CardFooter>
@@ -104,9 +124,7 @@ function WorkoutCard({ workout, exercises, onEdit, onDelete, onView }: { workout
 }
 
 export default function WorkoutsPage() {
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [appData, setAppData] = useState<AppData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
@@ -117,38 +135,41 @@ export default function WorkoutsPage() {
     async function loadData() {
         try {
             const data = await getAppData();
-            setWorkouts(data.workouts);
-            setExercises(data.exercises);
+            setAppData(data);
         } catch (error) {
             console.error("Failed to load data:", error);
-            setWorkouts(initialWorkouts);
-            setExercises(initialExercises);
         }
-        setIsDataLoaded(true);
     }
     loadData();
   }, []);
 
-  useEffect(() => {
-    if (isDataLoaded) {
-      saveWorkouts(workouts).catch(error => {
-        console.error("Failed to save workouts:", error);
-      });
-    }
-  }, [workouts, isDataLoaded]);
+  const handleSaveWorkout = async (data: Omit<Workout, 'id'>, id?: string) => {
+    if(!appData) return;
 
-  const handleSaveWorkout = (data: Omit<Workout, 'id'>, id?: string) => {
+    let newWorkouts: Workout[];
     if (id) {
-        setWorkouts(prev => prev.map(w => w.id === id ? { ...w, ...data, id: w.id } : w));
+        newWorkouts = appData.workouts.map(w => w.id === id ? { ...w, ...data, id: w.id } : w);
     } else {
         const newWorkout: Workout = {
             id: `w${Date.now()}`,
             ...data,
         };
-        setWorkouts((prev) => [...prev, newWorkout]);
+        newWorkouts = [...appData.workouts, newWorkout];
     }
+    const newData = {...appData, workouts: newWorkouts};
+    await saveAppData(newData);
+    setAppData(newData);
+
     setIsDialogOpen(false);
     setEditingWorkout(null);
+  };
+  
+  const handleStartOver = async (workoutId: string) => {
+    if (!appData) return;
+    const updatedLogs = appData.workoutLogs.filter(log => !(log.workoutId === workoutId && log.status === 'in-progress'));
+    const newData = { ...appData, workoutLogs: updatedLogs };
+    await saveAppData(newData);
+    setAppData(newData);
   };
 
   const handleOpenCreateDialog = () => {
@@ -170,9 +191,12 @@ export default function WorkoutsPage() {
     setIsAlertOpen(true);
   };
 
-  const handleDeleteWorkout = () => {
-    if (deletingWorkoutId) {
-        setWorkouts(prev => prev.filter(w => w.id !== deletingWorkoutId));
+  const handleDeleteWorkout = async () => {
+    if (deletingWorkoutId && appData) {
+        const newWorkouts = appData.workouts.filter(w => w.id !== deletingWorkoutId);
+        const newData = {...appData, workouts: newWorkouts };
+        await saveAppData(newData);
+        setAppData(newData);
     }
     setIsAlertOpen(false);
     setDeletingWorkoutId(null);
@@ -183,9 +207,11 @@ export default function WorkoutsPage() {
     setEditingWorkout(null);
   };
 
-  if (!isDataLoaded) {
+  if (!appData) {
     return <div>Загрузка тренировок...</div>;
   }
+  
+  const { workouts, exercises, workoutLogs } = appData;
 
   return (
     <div className="flex flex-col gap-4">
@@ -213,16 +239,21 @@ export default function WorkoutsPage() {
         </Dialog>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {workouts.map((workout) => (
-          <WorkoutCard 
-            key={workout.id} 
-            workout={workout} 
-            exercises={exercises}
-            onView={() => handleOpenViewDialog(workout)}
-            onEdit={() => handleOpenEditDialog(workout)}
-            onDelete={() => handleOpenDeleteAlert(workout.id)}
+        {workouts.map((workout) => {
+          const inProgressLog = workoutLogs.find(log => log.workoutId === workout.id && log.status === 'in-progress');
+          return (
+            <WorkoutCard 
+              key={workout.id} 
+              workout={workout} 
+              exercises={exercises}
+              inProgressLog={inProgressLog}
+              onView={() => handleOpenViewDialog(workout)}
+              onEdit={() => handleOpenEditDialog(workout)}
+              onDelete={() => handleOpenDeleteAlert(workout.id)}
+              onStartOver={() => handleStartOver(workout.id)}
             />
-        ))}
+          )
+        })}
       </div>
        <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>

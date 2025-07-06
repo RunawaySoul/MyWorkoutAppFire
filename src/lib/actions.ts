@@ -2,28 +2,157 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { exercises as initialExercises, workouts as initialWorkouts } from '@/lib/data';
-import type { Exercise, Workout } from '@/lib/types';
+import type { AppData, Exercise, Workout, WorkoutLog, BodyMeasurement } from '@/lib/types';
 
-type AppData = {
-    exercises: Exercise[];
-    workouts: Workout[];
-};
-
-// Define the path to the data file
 const dataFilePath = path.join(process.cwd(), 'data', 'db.json');
 
-/**
- * Ensures that the data file exists. If not, it creates it with initial data.
- */
+const initialExercises: Exercise[] = [
+    {
+      id: 'ex1',
+      name: 'Жим лежа',
+      description: 'Лягте на горизонтальную скамью и выжмите штангу от груди.',
+      type: 'weighted',
+      muscleGroup: 'Грудь',
+      imageUrl: 'https://placehold.co/600x400.png',
+      aiHint: 'barbell bench',
+      defaultSets: 3,
+      defaultReps: 8,
+      defaultWeight: 80,
+      defaultRestDuration: 90,
+    },
+    {
+      id: 'ex2',
+      name: 'Приседания со штангой',
+      description: 'Опустите бедра из положения стоя, а затем вернитесь в исходное положение.',
+      type: 'weighted',
+      muscleGroup: 'Ноги',
+      imageUrl: 'https://placehold.co/600x400.png',
+      aiHint: 'barbell squat',
+      defaultSets: 3,
+      defaultReps: 8,
+      defaultWeight: 100,
+      defaultRestDuration: 120,
+    },
+    {
+      id: 'ex3',
+      name: 'Становая тяга',
+      description: 'Поднимите нагруженную штангу с пола до уровня бедер, затем контролируемо опустите ее обратно.',
+      type: 'weighted',
+      muscleGroup: 'Спина',
+      imageUrl: 'https://placehold.co/600x400.png',
+      aiHint: 'barbell deadlift',
+      defaultSets: 1,
+      defaultReps: 5,
+      defaultWeight: 120,
+      defaultRestDuration: 180,
+    },
+    {
+      id: 'ex4',
+      name: 'Армейский жим',
+      description: 'Выжмите штангу или гантели от плеч над головой.',
+      type: 'weighted',
+      muscleGroup: 'Плечи',
+      imageUrl: 'https://placehold.co/600x400.png',
+      aiHint: 'overhead press',
+      defaultSets: 3,
+      defaultReps: 8,
+      defaultWeight: 50,
+      defaultRestDuration: 90,
+    },
+    {
+      id: 'ex5',
+      name: 'Подтягивания',
+      description: 'Поднимите тело вверх руками, пока подбородок не окажется над перекладиной.',
+      type: 'weighted',
+      muscleGroup: 'Спина',
+      imageUrl: 'https://placehold.co/600x400.png',
+      aiHint: 'man pullup',
+      defaultSets: 3,
+      defaultReps: 10,
+      defaultWeight: 0,
+      defaultRestDuration: 60,
+    },
+    {
+      id: 'ex6',
+      name: 'Планка',
+      description: 'Удерживайте положение, как при отжиманиях, опираясь на предплечья.',
+      type: 'timed-distance',
+      muscleGroup: 'Кор',
+      imageUrl: 'https://placehold.co/600x400.png',
+      aiHint: 'woman plank',
+      defaultSets: 3,
+      defaultDuration: 60,
+      defaultRestDuration: 30,
+    },
+     {
+      id: 'ex7',
+      name: 'Бег',
+      description: 'Бегите в постоянном темпе на беговой дорожке или на улице.',
+      type: 'timed-distance',
+      muscleGroup: 'Кардио',
+      imageUrl: 'https://placehold.co/600x400.png',
+      aiHint: 'woman running',
+      defaultSets: 1,
+      defaultDistance: 3,
+      defaultDuration: 1200,
+      defaultRestDuration: 0,
+    },
+    {
+      id: 'ex8',
+      name: 'Сгибание рук с гантелями',
+      description: 'Сгибайте руки с гантелями к плечам, держа локти неподвижно.',
+      type: 'weighted',
+      muscleGroup: 'Бицепс',
+      imageUrl: 'https://placehold.co/600x400.png',
+      aiHint: 'dumbbell curl',
+      defaultSets: 3,
+      defaultReps: 12,
+      defaultWeight: 15,
+      defaultRestDuration: 60,
+    },
+  ];
+
+const initialWorkouts: Workout[] = [
+    {
+      id: 'w1',
+      name: 'Силовая на все тело A',
+      description: 'Комплексная тренировка на все тело, с фокусом на основные группы мышц.',
+      exercises: [
+        { exerciseId: 'ex2', sets: 3, reps: 8, weight: 100, restDuration: 120 },
+        { exerciseId: 'ex1', sets: 3, reps: 8, weight: 80, restDuration: 90 },
+        { exerciseId: 'ex3', sets: 1, reps: 5, weight: 120, restDuration: 180 },
+      ],
+    },
+    {
+      id: 'w2',
+      name: 'Силовая на все тело B',
+      description: 'Альтернативная тренировка на все тело для сбалансированной программы.',
+      exercises: [
+        { exerciseId: 'ex2', sets: 3, reps: 8, weight: 105, restDuration: 120 },
+        { exerciseId: 'ex4', sets: 3, reps: 8, weight: 50, restDuration: 90 },
+        { exerciseId: 'ex5', sets: 3, reps: 8, weight: 10, restDuration: 60 },
+      ],
+    },
+    {
+      id: 'w3',
+      name: 'Кардио и Кор',
+      description: 'Тренировка для улучшения сердечно-сосудистой системы и укрепления кора.',
+      exercises: [
+        { exerciseId: 'ex7', sets: 1, distance: 3, duration: 1200, reps: 1, restDuration: 0 },
+        { exerciseId: 'ex6', sets: 3, duration: 60, reps: 1, restDuration: 30 },
+      ],
+    },
+];
+
 async function ensureDataFileExists() {
     try {
         await fs.access(dataFilePath);
     } catch {
-        // File doesn't exist, so create the directory and the file with initial data
         const initialData: AppData = {
             exercises: initialExercises,
             workouts: initialWorkouts,
+            workoutLogs: [],
+            bodyMeasurements: [],
         };
         try {
             await fs.mkdir(path.dirname(dataFilePath), { recursive: true });
@@ -35,9 +164,6 @@ async function ensureDataFileExists() {
     }
 }
 
-/**
- * Reads and returns all application data (exercises and workouts) from the JSON file.
- */
 export async function getAppData(): Promise<AppData> {
     try {
         await ensureDataFileExists();
@@ -45,40 +171,20 @@ export async function getAppData(): Promise<AppData> {
         return JSON.parse(fileContent);
     } catch (error) {
         console.error("Error reading app data:", error);
-        // Fallback to initial data if reading/parsing fails
         return {
             exercises: initialExercises,
             workouts: initialWorkouts,
+            workoutLogs: [],
+            bodyMeasurements: [],
         };
     }
 }
 
-/**
- * Saves the entire list of exercises to the JSON file.
- * @param exercises The array of exercises to save.
- */
-export async function saveExercises(exercises: Exercise[]): Promise<void> {
+export async function saveAppData(data: AppData): Promise<void> {
     try {
-        const currentData = await getAppData();
-        const newData: AppData = { ...currentData, exercises };
-        await fs.writeFile(dataFilePath, JSON.stringify(newData, null, 2), 'utf8');
+        await fs.writeFile(dataFilePath, JSON.stringify(data, null, 2), 'utf8');
     } catch (error) {
-        console.error("Error saving exercises:", error);
-        throw new Error("Could not save exercises.");
-    }
-}
-
-/**
- * Saves the entire list of workouts to the JSON file.
- * @param workouts The array of workouts to save.
- */
-export async function saveWorkouts(workouts: Workout[]): Promise<void> {
-    try {
-        const currentData = await getAppData();
-        const newData: AppData = { ...currentData, workouts };
-        await fs.writeFile(dataFilePath, JSON.stringify(newData, null, 2), 'utf8');
-    } catch (error) {
-        console.error("Error saving workouts:", error);
-        throw new Error("Could not save workouts.");
+        console.error("Error saving app data:", error);
+        throw new Error("Could not save app data.");
     }
 }

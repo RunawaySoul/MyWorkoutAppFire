@@ -1,3 +1,5 @@
+export type ExerciseStatus = 'pending' | 'completed' | 'skipped';
+
 export interface Exercise {
   id: string;
   name: string;
@@ -35,11 +37,21 @@ export interface Workout {
 export interface WorkoutLog {
   id: string;
   workoutId: string;
-  date: string; // ISO 8601 format
-  duration: number; // in minutes
+  date: string; // ISO 8601 format for start time
+  status: 'in-progress' | 'completed';
+  currentExerciseIndex: number;
+  exerciseStatuses: Record<number, ExerciseStatus>;
+  endTime?: string; // ISO 8601 format
 }
 
 export interface BodyMeasurement {
   date: string; // YYYY-MM-DD
   weight: number;
+}
+
+export interface AppData {
+  exercises: Exercise[];
+  workouts: Workout[];
+  workoutLogs: WorkoutLog[];
+  bodyMeasurements: BodyMeasurement[];
 }

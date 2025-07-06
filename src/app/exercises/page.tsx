@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -11,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import type { Exercise } from '@/lib/types';
+import type { Exercise, AppData } from '@/lib/types';
 import { PlusCircle, MoreVertical, Edit, Trash2, ArrowUpDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -55,20 +54,18 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { CreateExerciseForm } from '@/components/forms/create-exercise-form';
-import { getAppData, saveExercises } from '@/lib/actions';
+import { getAppData, saveAppData } from '@/lib/actions';
 
 type SortKey = keyof Exercise | '';
 
 export default function ExercisesPage() {
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [appData, setAppData] = useState<AppData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [deletingExerciseId, setDeletingExerciseId] = useState<string | null>(null);
   const [viewingExercise, setViewingExercise] = useState<Exercise | null>(null);
   
-  // State for new features
   const [searchTerm, setSearchTerm] = useState('');
   const [muscleGroupFilter, setMuscleGroupFilter] = useState('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({ key: 'name', direction: 'asc' });
@@ -79,22 +76,15 @@ export default function ExercisesPage() {
     async function loadData() {
       try {
         const data = await getAppData();
-        setExercises(data.exercises);
+        setAppData(data);
       } catch (error) {
         console.error("Failed to load exercises:", error);
       }
-      setIsDataLoaded(true);
     }
     loadData();
   }, []);
-
-  useEffect(() => {
-    if (isDataLoaded) {
-      saveExercises(exercises).catch(error => {
-        console.error("Failed to save exercises:", error);
-      });
-    }
-  }, [exercises, isDataLoaded]);
+  
+  const exercises = appData?.exercises || [];
 
   const muscleGroups = useMemo(() => {
     const allGroups = exercises.map(ex => ex.muscleGroup);
@@ -146,17 +136,23 @@ export default function ExercisesPage() {
       setSelectedIds(new Set());
     }
   };
+  
+  const updateExercises = async (newExercises: Exercise[]) => {
+    if(!appData) return;
+    const newData = {...appData, exercises: newExercises};
+    await saveAppData(newData);
+    setAppData(newData);
+  };
 
   const handleSaveExercise = (
     data: Omit<Exercise, 'id' | 'aiHint'>,
     id?: string
   ) => {
     if (id) {
-      setExercises((prev) =>
-        prev.map((ex) =>
-          ex.id === id ? { ...ex, ...data, imageUrl: data.imageUrl || undefined } : ex
-        )
-      );
+        const newExercises = exercises.map((ex) =>
+            ex.id === id ? { ...ex, ...data, imageUrl: data.imageUrl || undefined } : ex
+        );
+        updateExercises(newExercises);
     } else {
       const newExercise: Exercise = {
         id: `ex${Date.now()}`,
@@ -164,7 +160,7 @@ export default function ExercisesPage() {
         imageUrl: data.imageUrl || undefined,
         aiHint: data.name.toLowerCase().split(' ').slice(0, 2).join(' '),
       };
-      setExercises((prev) => [...prev, newExercise]);
+      updateExercises([...exercises, newExercise]);
     }
     setIsDialogOpen(false);
     setEditingExercise(null);
@@ -191,14 +187,14 @@ export default function ExercisesPage() {
 
   const handleDeleteExercise = () => {
     if (deletingExerciseId) {
-      setExercises((prev) => prev.filter((ex) => ex.id !== deletingExerciseId));
+        updateExercises(exercises.filter((ex) => ex.id !== deletingExerciseId));
     }
     setIsAlertOpen(false);
     setDeletingExerciseId(null);
   };
 
   const handleConfirmBulkDelete = () => {
-    setExercises(prev => prev.filter(ex => !selectedIds.has(ex.id)));
+    updateExercises(exercises.filter(ex => !selectedIds.has(ex.id)));
     setSelectedIds(new Set());
     setIsBulkDeleteAlertOpen(false);
   }
@@ -208,7 +204,7 @@ export default function ExercisesPage() {
     setEditingExercise(null);
   };
 
-  if (!isDataLoaded) {
+  if (!appData) {
     return <div>Загрузка упражнений...</div>;
   }
 
@@ -239,7 +235,6 @@ export default function ExercisesPage() {
         </Dialog>
       </div>
       
-      {/* Filters and Bulk Actions */}
       <Card>
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col md:flex-row gap-2">
@@ -274,14 +269,13 @@ export default function ExercisesPage() {
         </CardContent>
       </Card>
       
-      {/* Exercises Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]">
                 <Checkbox
-                  checked={selectedIds.size > 0 && selectedIds.size === displayedExercises.length}
+                  checked={selectedIds.size > 0 && displayedExercises.length > 0 && selectedIds.size === displayedExercises.length}
                   onCheckedChange={(checked) => handleSelectAll(checked === true)}
                 />
               </TableHead>
@@ -320,7 +314,7 @@ export default function ExercisesPage() {
                   <TableCell>
                     <Badge variant="secondary" style={{
                       backgroundColor: exercise.color,
-                      color: '#fff', // A simple contrast color, might need a more complex logic
+                      color: '#fff', 
                     }}>{exercise.muscleGroup}</Badge>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">{exercise.type === 'weighted' ? 'На подход/повторение' : 'На время/расстояние'}</TableCell>
@@ -357,7 +351,6 @@ export default function ExercisesPage() {
         </Table>
       </div>
 
-      {/* Dialogs */}
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -422,6 +415,3 @@ export default function ExercisesPage() {
     </div>
   );
 }
-
-
-    

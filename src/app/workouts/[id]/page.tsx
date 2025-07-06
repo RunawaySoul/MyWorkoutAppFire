@@ -1,105 +1,139 @@
-
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from 'next/link';
-import type { Workout, Exercise } from "@/lib/types";
+import type { Workout, Exercise, AppData, WorkoutLog, ExerciseStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, Timer, Flame, CheckCircle, Check, X, Plus, SkipForward } from "lucide-react";
-import { getAppData } from "@/lib/actions";
-
-type ExerciseStatus = 'pending' | 'completed' | 'skipped';
+import { ChevronLeft, Timer, Flame, CheckCircle, Check, X, Plus, SkipForward, DoorOpen } from "lucide-react";
+import { getAppData, saveAppData } from "@/lib/actions";
 
 export default function WorkoutPlayerPage() {
   const params = useParams();
-  const [workout, setWorkout] = useState<Workout | null>(null);
-  const [allExercises, setAllExercises] = useState<Exercise[]>([]);
+  const router = useRouter();
+  const [appData, setAppData] = useState<AppData | null>(null);
+  const [currentLog, setCurrentLog] = useState<WorkoutLog | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
-
-  // State for workout player logic
-  const [exerciseStatuses, setExerciseStatuses] = useState<Record<number, ExerciseStatus>>({});
+  
   const [isResting, setIsResting] = useState(false);
   const [restTimeLeft, setRestTimeLeft] = useState(0);
   const [exerciseTimerActive, setExerciseTimerActive] = useState(false);
   const [exerciseTimeLeft, setExerciseTimeLeft] = useState(0);
+  
+  const workoutId = params.id as string;
+  const workout = useMemo(() => appData?.workouts.find(w => w.id === workoutId), [appData, workoutId]);
 
+  const saveProgress = useCallback(async (updatedLog: WorkoutLog | null) => {
+    if (!appData || !updatedLog) return;
+    const updatedLogs = appData.workoutLogs.map(log => log.id === updatedLog.id ? updatedLog : log);
+    await saveAppData({ ...appData, workoutLogs: updatedLogs });
+  }, [appData]);
+  
   useEffect(() => {
     async function loadData() {
         try {
             const data = await getAppData();
-            const foundWorkout = data.workouts.find((w) => w.id === params.id);
-            if (foundWorkout) {
-                setWorkout(foundWorkout);
-                const initialStatuses: Record<number, ExerciseStatus> = {};
-                foundWorkout.exercises.forEach((_, index) => {
-                    initialStatuses[index] = 'pending';
-                });
-                setExerciseStatuses(initialStatuses);
+            setAppData(data);
+            
+            let log = data.workoutLogs.find(l => l.workoutId === workoutId && l.status === 'in-progress');
+            
+            if (!log) {
+                const workoutToStart = data.workouts.find(w => w.id === workoutId);
+                if (workoutToStart) {
+                    const newLog: WorkoutLog = {
+                        id: `log${Date.now()}`,
+                        workoutId,
+                        date: new Date().toISOString(),
+                        status: 'in-progress',
+                        currentExerciseIndex: 0,
+                        exerciseStatuses: Object.fromEntries(workoutToStart.exercises.map((_, i) => [i, 'pending']))
+                    };
+                    const newData = { ...data, workoutLogs: [...data.workoutLogs, newLog] };
+                    await saveAppData(newData);
+                    setAppData(newData);
+                    log = newLog;
+                }
             }
-            setAllExercises(data.exercises);
+
+            if(log) {
+                setCurrentLog(log);
+                setCurrentExerciseIndex(log.currentExerciseIndex);
+            }
+            
         } catch (error) {
             console.error("Failed to load data:", error);
         }
         setIsDataLoaded(true);
     }
-    if (params.id) {
+    if (workoutId) {
         loadData();
     }
-  }, [params.id]);
+  }, [workoutId]);
 
-  const setExercise = (index: number) => {
-    if (!workout || index < 0 || index >= workout.exercises.length) {
-        return;
+  const updateLog = useCallback((updates: Partial<WorkoutLog>) => {
+    if (!currentLog) return;
+    const updatedLog = { ...currentLog, ...updates };
+    setCurrentLog(updatedLog);
+    const updatedLogs = appData!.workoutLogs.map(log => log.id === updatedLog.id ? updatedLog : log);
+    setAppData(prev => prev ? ({ ...prev, workoutLogs: updatedLogs }) : null);
+  }, [currentLog, appData]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+        if(currentLog && currentLog.status === 'in-progress') {
+            saveAppData(appData!);
+        }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+        if(currentLog && currentLog.status === 'in-progress') {
+            saveProgress(currentLog);
+        }
     }
-    setCurrentExerciseIndex(index);
-    setExerciseTimerActive(false); // This will be handled by the auto-start useEffect
-    setIsResting(false);
-  };
-  
+  }, [currentLog, saveProgress, appData]);
+
   const handleNext = useCallback(() => {
-    if (!workout) return;
+    if (!workout || !currentLog) return;
     if (currentExerciseIndex < workout.exercises.length - 1) {
-      setExercise(currentExerciseIndex + 1);
+      const nextIndex = currentExerciseIndex + 1;
+      setCurrentExerciseIndex(nextIndex);
+      updateLog({ currentExerciseIndex: nextIndex });
     } else {
+      updateLog({ status: 'completed', endTime: new Date().toISOString() });
       setIsFinished(true);
     }
-  }, [workout, currentExerciseIndex]);
-
-  const handlePrev = useCallback(() => {
-    if (currentExerciseIndex > 0) {
-      setExercise(currentExerciseIndex - 1);
-    }
-  }, [currentExerciseIndex]);
+    setExerciseTimerActive(false); 
+    setIsResting(false);
+  }, [workout, currentLog, currentExerciseIndex, updateLog]);
 
   const handleMarkComplete = useCallback(() => {
-    if (!workout) return;
-    setExerciseStatuses(prev => ({ ...prev, [currentExerciseIndex]: 'completed' }));
+    if (!workout || !currentLog) return;
+    const newStatuses = { ...currentLog.exerciseStatuses, [currentExerciseIndex]: 'completed' as ExerciseStatus };
+    updateLog({ exerciseStatuses: newStatuses });
     setExerciseTimerActive(false);
 
     const restDuration = workout.exercises[currentExerciseIndex]?.restDuration;
-    // Do not rest after the last exercise
     if (restDuration && restDuration > 0 && currentExerciseIndex < workout.exercises.length - 1) {
       setRestTimeLeft(restDuration);
       setIsResting(true);
     } else {
       handleNext();
     }
-  }, [workout, currentExerciseIndex, handleNext]);
+  }, [workout, currentLog, currentExerciseIndex, handleNext, updateLog]);
 
-  // Auto-start timer when exercise changes
   useEffect(() => {
-    if (!workout || isResting || !isDataLoaded) return;
+    if (!workout || isResting || !isDataLoaded || !currentLog) return;
     
     const currentWorkoutEx = workout.exercises[currentExerciseIndex];
     if (!currentWorkoutEx) return;
 
-    const currentEx = allExercises.find(e => e.id === currentWorkoutEx.exerciseId);
+    const currentEx = appData?.exercises.find(e => e.id === currentWorkoutEx.exerciseId);
     
     if (currentEx?.type === 'timed-distance' && currentWorkoutEx?.duration) {
       setExerciseTimeLeft(currentWorkoutEx.duration);
@@ -107,71 +141,34 @@ export default function WorkoutPlayerPage() {
     } else {
       setExerciseTimerActive(false);
     }
-  }, [currentExerciseIndex, workout, allExercises, isResting, isDataLoaded]);
+  }, [currentExerciseIndex, workout, appData, isResting, isDataLoaded, currentLog]);
 
-  // Timer for the exercise itself
   useEffect(() => {
-    if (!exerciseTimerActive) {
+    if (!exerciseTimerActive || exerciseTimeLeft <= 0) {
+      if (exerciseTimeLeft <= 0 && exerciseTimerActive) handleMarkComplete();
       return;
     }
-    
-    if (exerciseTimeLeft <= 0) {
-      handleMarkComplete();
-      return;
-    }
-
-    const intervalId = setInterval(() => {
-      setExerciseTimeLeft((prev) => prev - 1);
-    }, 1000);
-
+    const intervalId = setInterval(() => setExerciseTimeLeft((prev) => prev - 1), 1000);
     return () => clearInterval(intervalId);
   }, [exerciseTimerActive, exerciseTimeLeft, handleMarkComplete]);
 
-  // Timer for rest periods
   useEffect(() => {
     if (!isResting || restTimeLeft <= 0) {
-      if (restTimeLeft <= 0 && isResting) {
-        setIsResting(false);
-        handleNext();
-      }
+      if (restTimeLeft <= 0 && isResting) handleNext();
       return;
     }
-
-    const intervalId = setInterval(() => {
-      setRestTimeLeft((prev) => prev - 1);
-    }, 1000);
-
+    const intervalId = setInterval(() => setRestTimeLeft((prev) => prev - 1), 1000);
     return () => clearInterval(intervalId);
   }, [isResting, restTimeLeft, handleNext]);
 
   const handleSkip = () => {
-      setExerciseStatuses(prev => ({ ...prev, [currentExerciseIndex]: 'skipped' }));
+      if(!currentLog) return;
+      const newStatuses = { ...currentLog.exerciseStatuses, [currentExerciseIndex]: 'skipped' as ExerciseStatus };
+      updateLog({ exerciseStatuses: newStatuses });
       setExerciseTimerActive(false);
-      setIsResting(false); // Ensure rest is cancelled if skipping
+      setIsResting(false); 
       handleNext();
   };
-
-  const handleExtendRest = () => {
-    setRestTimeLeft(prev => prev + 15);
-  };
-  
-  const handleSkipRest = () => {
-    setIsResting(false);
-    handleNext();
-  };
-  
-  const handleToggleExerciseTimer = () => {
-    setExerciseTimerActive(prev => !prev);
-  };
-  
-  const getNextExerciseName = () => {
-    if (!workout || currentExerciseIndex >= workout.exercises.length - 1) {
-        return "Тренировка почти завершена!";
-    }
-    const nextWorkoutExercise = workout.exercises[currentExerciseIndex + 1];
-    const nextExercise = allExercises.find(e => e.id === nextWorkoutExercise?.exerciseId);
-    return nextExercise?.name || "";
-  }
 
   const formatTime = (totalSeconds: number) => {
     const minutes = Math.floor(totalSeconds / 60);
@@ -179,22 +176,18 @@ export default function WorkoutPlayerPage() {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
-  if (!isDataLoaded) {
+  if (!isDataLoaded || !appData || !workout || !currentLog) {
     return <div>Загрузка тренировки...</div>;
-  }
-
-  if (!workout) {
-    return <div>Тренировка не найдена.</div>;
   }
   
   const currentWorkoutExercise = workout.exercises[currentExerciseIndex];
-  const currentExercise = allExercises.find(e => e.id === currentWorkoutExercise.exerciseId);
-
-  const completedCount = Object.values(exerciseStatuses).filter(s => s !== 'pending').length;
+  const currentExercise = appData.exercises.find(e => e.id === currentWorkoutExercise.exerciseId);
+  
+  const completedCount = Object.values(currentLog.exerciseStatuses).filter(s => s !== 'pending').length;
   const progressPercentage = (completedCount / workout.exercises.length) * 100;
 
   if(isFinished) {
-    const finalCompletedCount = Object.values(exerciseStatuses).filter(s => s === 'completed').length;
+    const finalCompletedCount = Object.values(currentLog.exerciseStatuses).filter(s => s === 'completed').length;
     return (
         <Card className="max-w-2xl mx-auto text-center">
             <CardHeader>
@@ -217,8 +210,9 @@ export default function WorkoutPlayerPage() {
   if(!currentExercise) {
       return <div>Упражнение не найдено.</div>
   }
-
+  
   if (isResting) {
+    const nextExercise = appData.exercises.find(e => e.id === workout.exercises[currentExerciseIndex + 1]?.exerciseId);
     return (
       <div className="flex flex-col gap-4">
         <Card>
@@ -242,14 +236,14 @@ export default function WorkoutPlayerPage() {
             </CardHeader>
             <CardContent className="flex-grow flex flex-col items-center justify-center">
               <p className="text-8xl font-bold my-4 text-primary">{formatTime(restTimeLeft)}</p>
-              <p className="text-muted-foreground">Следующее упражнение: {getNextExerciseName()}</p>
+              <p className="text-muted-foreground">Следующее упражнение: {nextExercise?.name || 'Тренировка почти завершена!'}</p>
             </CardContent>
             <CardFooter className="flex gap-2">
-                <Button variant="outline" onClick={handleExtendRest}>
+                <Button variant="outline" onClick={() => setRestTimeLeft(prev => prev + 15)}>
                     <Plus className="mr-2 h-4 w-4" />
                     Продлить (+15с)
                 </Button>
-                <Button onClick={handleSkipRest}>
+                <Button onClick={() => setRestTimeLeft(0)}>
                     Пропустить <SkipForward className="ml-2 h-4 w-4" />
                 </Button>
             </CardFooter>
@@ -262,14 +256,17 @@ export default function WorkoutPlayerPage() {
     <div className="flex flex-col gap-4">
         <Card>
             <CardHeader>
-                <Progress value={progressPercentage} />
-                <div className="flex justify-between items-baseline mt-2">
-                    <CardTitle className="font-headline text-2xl">{workout.name}</CardTitle>
+                <div className="flex justify-between items-center mb-2">
+                    <Button variant="ghost" size="sm" asChild>
+                        <Link href="/workouts"><ChevronLeft className="mr-2 h-4 w-4"/> Завершить досрочно</Link>
+                    </Button>
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
                         <Flame className="h-4 w-4" />
                         <span>{currentExerciseIndex + 1} / {workout.exercises.length}</span>
                     </div>
                 </div>
+                <Progress value={progressPercentage} />
+                <CardTitle className="font-headline text-2xl mt-2">{workout.name}</CardTitle>
             </CardHeader>
         </Card>
         
@@ -284,6 +281,7 @@ export default function WorkoutPlayerPage() {
                 )}
                 <CardContent className={!currentExercise.imageUrl ? "pt-6" : ""}>
                     <h3 className="font-bold text-xl font-headline">{currentExercise.name}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Группа мышц: {currentExercise.muscleGroup}</p>
                     <p className="text-muted-foreground mt-2">{currentExercise.description}</p>
                 </CardContent>
             </Card>
@@ -298,25 +296,25 @@ export default function WorkoutPlayerPage() {
                             <p className="text-sm text-muted-foreground">Подходы</p>
                             <p className="text-3xl font-bold">{currentWorkoutExercise.sets}</p>
                         </div>
-                        {currentWorkoutExercise.reps && (
+                        {currentWorkoutExercise.reps != null && (
                              <div>
                                 <p className="text-sm text-muted-foreground">Повторения</p>
                                 <p className="text-3xl font-bold">{currentWorkoutExercise.reps}</p>
                             </div>
                         )}
-                        {currentWorkoutExercise.weight !== undefined && (
+                        {currentWorkoutExercise.weight != null && (
                              <div>
                                 <p className="text-sm text-muted-foreground">Вес</p>
                                 <p className="text-3xl font-bold">{currentWorkoutExercise.weight}кг</p>
                             </div>
                         )}
-                        {currentWorkoutExercise.duration && (
+                        {currentWorkoutExercise.duration != null && (
                              <div>
                                 <p className="text-sm text-muted-foreground">Длительность</p>
                                 <p className="text-3xl font-bold">{formatTime(currentWorkoutExercise.duration)}</p>
                             </div>
                         )}
-                         {currentWorkoutExercise.distance && (
+                         {currentWorkoutExercise.distance != null && (
                              <div>
                                 <p className="text-sm text-muted-foreground">Дистанция</p>
                                 <p className="text-3xl font-bold">{currentWorkoutExercise.distance}км</p>
@@ -333,7 +331,7 @@ export default function WorkoutPlayerPage() {
                             <p className="text-5xl font-bold my-2 text-accent">
                                 {formatTime(exerciseTimeLeft)}
                             </p>
-                            <Button variant="outline" onClick={handleToggleExerciseTimer} disabled={exerciseTimeLeft === 0}>
+                            <Button variant="outline" onClick={() => setExerciseTimerActive(prev => !prev)} disabled={exerciseTimeLeft === 0}>
                                 {exerciseTimerActive ? 'Пауза' : 'Продолжить'}
                             </Button>
                         </div>
@@ -342,20 +340,14 @@ export default function WorkoutPlayerPage() {
             </Card>
         </div>
         
-        <div className="flex justify-between mt-4">
-            <Button variant="outline" onClick={handlePrev} disabled={currentExerciseIndex === 0}>
-                <ChevronLeft className="mr-2 h-4 w-4"/> Назад
+        <div className="flex justify-center mt-4 gap-2">
+            <Button variant="outline" onClick={handleSkip} className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
+                Пропустить <X className="ml-2 h-4 w-4"/>
             </Button>
-            <div className="flex gap-2">
-                <Button variant="outline" onClick={handleSkip} className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
-                    Пропустить <X className="ml-2 h-4 w-4"/>
-                </Button>
-                <Button onClick={handleMarkComplete} className="bg-green-600 text-white hover:bg-green-700">
-                    Готово <Check className="ml-2 h-4 w-4"/>
-                </Button>
-            </div>
+            <Button onClick={handleMarkComplete} className="bg-green-600 text-white hover:bg-green-700">
+                Готово <Check className="ml-2 h-4 w-4"/>
+            </Button>
         </div>
     </div>
   );
 }
-

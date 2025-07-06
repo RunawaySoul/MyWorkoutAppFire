@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import {
   Table,
@@ -23,8 +21,8 @@ import {
   ChartConfig,
 } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
-import { workoutLogs, workouts, bodyMeasurements } from "@/lib/data";
-import { format, parseISO } from "date-fns";
+import { getAppData } from "@/lib/actions";
+import { format, parseISO, differenceInMinutes } from "date-fns";
 import { ru } from 'date-fns/locale';
 
 const chartConfig = {
@@ -34,11 +32,15 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export default function HistoryPage() {
+export default async function HistoryPage() {
+  const { workouts, workoutLogs, bodyMeasurements } = await getAppData();
+
   const chartData = bodyMeasurements.map((m) => ({
     date: format(new Date(m.date), "MMM d", { locale: ru }),
     weight: m.weight,
   }));
+  
+  const completedLogs = workoutLogs.filter(log => log.status === 'completed' && log.endTime);
 
   return (
     <div className="grid gap-6 lg:grid-cols-5">
@@ -60,9 +62,10 @@ export default function HistoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {workoutLogs.length > 0 ? (
-                  workoutLogs.map((log) => {
+                {completedLogs.length > 0 ? (
+                  completedLogs.map((log) => {
                     const workout = workouts.find((w) => w.id === log.workoutId);
+                    const duration = differenceInMinutes(parseISO(log.endTime!), parseISO(log.date));
                     return (
                       <TableRow key={log.id}>
                         <TableCell className="font-medium">
@@ -72,7 +75,7 @@ export default function HistoryPage() {
                           {format(parseISO(log.date), "PPP", { locale: ru })}
                         </TableCell>
                         <TableCell className="text-right">
-                          {log.duration} мин
+                          {duration} мин
                         </TableCell>
                       </TableRow>
                     );

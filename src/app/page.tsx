@@ -9,12 +9,23 @@ import {
   Zap,
 } from 'lucide-react';
 import Link from 'next/link';
+import { differenceInSeconds } from 'date-fns';
 
 export default async function DashboardPage() {
-  const { workouts, exercises } = await getAppData();
+  const { workouts, exercises, workoutLogs } = await getAppData();
 
   const totalWorkouts = workouts.length;
   const totalExercises = exercises.length;
+  
+  const completedLogs = workoutLogs.filter(log => log.status === 'completed' && log.endTime);
+  const totalTimeUnderLoad = completedLogs.reduce((acc, log) => {
+    const start = new Date(log.date);
+    const end = new Date(log.endTime!);
+    return acc + differenceInSeconds(end, start);
+  }, 0);
+
+  const hours = Math.floor(totalTimeUnderLoad / 3600);
+  const minutes = Math.floor((totalTimeUnderLoad % 3600) / 60);
 
   return (
     <div className="flex flex-col gap-8">
@@ -39,9 +50,9 @@ export default async function DashboardPage() {
             <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0ч 0м</div>
+            <div className="text-2xl font-bold">{hours}ч {minutes}м</div>
             <p className="text-xs text-muted-foreground">
-              данные еще не собраны
+              на основе завершенных тренировок
             </p>
           </CardContent>
         </Card>
@@ -84,7 +95,20 @@ export default async function DashboardPage() {
             <CardTitle>Недавние тренировки</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>Здесь будет отображаться история ваших недавних тренировок.</p>
+            {completedLogs.length > 0 ? (
+              <ul className="space-y-2">
+                {completedLogs.slice(0, 5).map(log => {
+                   const workout = workouts.find(w => w.id === log.workoutId);
+                   return (
+                    <li key={log.id} className="text-sm text-muted-foreground">
+                      Вы завершили тренировку "{workout?.name || 'Неизвестная'}" {new Date(log.date).toLocaleDateString('ru-RU')}.
+                    </li>
+                   )
+                })}
+              </ul>
+            ) : (
+              <p>Здесь будет отображаться история ваших недавних тренировок.</p>
+            )}
           </CardContent>
         </Card>
       </div>

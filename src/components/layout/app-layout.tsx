@@ -19,6 +19,7 @@ import {
   Repeat,
   History,
   Sparkles,
+  DoorOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -38,12 +39,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const getPageTitle = () => {
     const currentItem = navItems.find((item) => {
       if (item.href === '/') return pathname === '/';
-      return pathname.startsWith(item.href)
+      return pathname.startsWith(item.href) && item.href !== '/';
     });
     if (currentItem) return currentItem.label;
     if (pathname.startsWith('/workouts/')) return 'Плеер тренировки';
     return "Мои Тренировки";
   };
+  
+  const isWorkoutPlayer = pathname.startsWith('/workouts/');
 
   return (
     <SidebarProvider>
@@ -60,7 +63,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === item.href}
+                  isActive={pathname === item.href || (item.href === '/workouts' && pathname.startsWith('/workouts/'))}
                   tooltip={{ children: item.label }}
                 >
                   <Link href={item.href}>
