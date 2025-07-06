@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -15,7 +14,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import type { Workout, Exercise, WorkoutExercise } from '@/lib/types';
+import type { Workout, Exercise } from '@/lib/types';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import {
   Select,
@@ -24,8 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '../ui/scroll-area';
 
@@ -35,6 +33,7 @@ const workoutExerciseSchema = z.object({
   reps: z.coerce.number().min(1, 'Минимум 1 повторение').optional(),
   duration: z.coerce.number().min(1, 'Минимум 1 секунда').optional(),
   distance: z.coerce.number().min(1, 'Минимум 1 метр').optional(),
+  restDuration: z.coerce.number().optional(),
 });
 
 const formSchema = z.object({
@@ -75,8 +74,9 @@ const formSchema = z.object({
 
 type CreateWorkoutFormProps = {
   allExercises: Exercise[];
-  onFormSubmit: (data: Omit<Workout, 'id'>) => void;
+  onFormSubmit: (data: Omit<Workout, 'id'>, id?: string) => void;
   onCancel: () => void;
+  initialData?: Workout | null;
 };
 
 // a global for this component to pass zod refine context
@@ -86,6 +86,7 @@ export function CreateWorkoutForm({
   allExercises: propsAllExercises,
   onFormSubmit,
   onCancel,
+  initialData,
 }: CreateWorkoutFormProps) {
   allExercises = propsAllExercises;
   const [selectedExercise, setSelectedExercise] = useState<string>('');
@@ -99,6 +100,18 @@ export function CreateWorkoutForm({
     },
   });
 
+  useEffect(() => {
+    if (initialData) {
+        form.reset(initialData);
+    } else {
+        form.reset({
+            name: '',
+            description: '',
+            exercises: [],
+        });
+    }
+  }, [initialData, form]);
+
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'exercises',
@@ -109,7 +122,7 @@ export function CreateWorkoutForm({
       (e) => e.id === selectedExercise
     );
     if (exerciseToAdd && !fields.some(f => f.exerciseId === exerciseToAdd.id)) {
-      append({ exerciseId: exerciseToAdd.id, sets: 3, reps: 10 });
+      append({ exerciseId: exerciseToAdd.id, sets: 3, reps: 10, restDuration: 60 });
       setSelectedExercise('');
     }
   };
@@ -123,8 +136,10 @@ export function CreateWorkoutForm({
   }
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    onFormSubmit(values);
+    onFormSubmit(values, initialData?.id);
   }
+
+  const isEditing = !!initialData;
 
   return (
     <Form {...form}>
@@ -171,7 +186,7 @@ export function CreateWorkoutForm({
                 ))}
               </SelectContent>
             </Select>
-            <Button type="button" onClick={handleAddExercise}>
+            <Button type="button" onClick={handleAddExercise} disabled={!selectedExercise}>
               <PlusCircle className="mr-2" /> Добавить
             </Button>
           </div>
@@ -198,7 +213,7 @@ export function CreateWorkoutForm({
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
                         name={`exercises.${index}.sets`}
@@ -212,51 +227,68 @@ export function CreateWorkoutForm({
                           </FormItem>
                         )}
                       />
-                      {exerciseType === 'weighted' && (
+                      
+                        {exerciseType === 'weighted' && (
+                            <FormField
+                            control={form.control}
+                            name={`exercises.${index}.reps`}
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Повторения</FormLabel>
+                                <FormControl>
+                                    <Input type="number" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        )}
+                        {exerciseType === 'timed' && (
+                            <FormField
+                            control={form.control}
+                            name={`exercises.${index}.duration`}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Время (сек)</FormLabel>
+                                <FormControl>
+                                    <Input type="number" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        )}
+                        {exerciseType === 'distance' && (
+                            <FormField
+                            control={form.control}
+                            name={`exercises.${index}.distance`}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Дистанция (м)</FormLabel>
+                                <FormControl>
+                                    <Input type="number" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        )}
+                        {/* Empty cell for grid alignment if no second field */}
+                        {!exerciseType && <div></div>}
+
                         <FormField
-                          control={form.control}
-                          name={`exercises.${index}.reps`}
-                          render={({ field }) => (
-                           <FormItem>
-                              <FormLabel>Повторения</FormLabel>
-                              <FormControl>
-                                <Input type="number" {...field} />
-                              </FormControl>
-                               <FormMessage />
-                            </FormItem>
-                          )}
+                            control={form.control}
+                            name={`exercises.${index}.restDuration`}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Отдых (сек)</FormLabel>
+                                    <FormControl>
+                                        <Input type="number" placeholder="60" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                      )}
-                      {exerciseType === 'timed' && (
-                         <FormField
-                          control={form.control}
-                          name={`exercises.${index}.duration`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Длительность (сек)</FormLabel>
-                              <FormControl>
-                                <Input type="number" {...field} />
-                              </FormControl>
-                               <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-                      {exerciseType === 'distance' && (
-                         <FormField
-                          control={form.control}
-                          name={`exercises.${index}.distance`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Дистанция (м)</FormLabel>
-                              <FormControl>
-                                <Input type="number" {...field} />
-                              </FormControl>
-                               <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -269,7 +301,7 @@ export function CreateWorkoutForm({
           <Button type="button" variant="ghost" onClick={onCancel}>
             Отмена
           </Button>
-          <Button type="submit">Создать тренировку</Button>
+          <Button type="submit">{isEditing ? 'Сохранить' : 'Создать тренировку'}</Button>
         </div>
       </form>
     </Form>

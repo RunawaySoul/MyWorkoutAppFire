@@ -1,11 +1,12 @@
 export interface Exercise {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   type: 'weighted' | 'timed' | 'distance';
   muscleGroup: string;
   imageUrl: string;
   aiHint?: string;
+  color?: string;
 }
 
 export interface WorkoutExercise {
@@ -14,6 +15,7 @@ export interface WorkoutExercise {
   reps?: number;
   duration?: number; // in seconds
   distance?: number; // in meters
+  restDuration?: number; // in seconds
 }
 
 export interface Workout {
