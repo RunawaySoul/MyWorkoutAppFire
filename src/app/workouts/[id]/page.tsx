@@ -99,7 +99,7 @@ export default function WorkoutPlayerPage() {
                     <CardTitle className="font-headline">Детали</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex justify-around text-center">
+                    <div className="flex flex-wrap justify-around text-center gap-4">
                         <div>
                             <p className="text-sm text-muted-foreground">Подходы</p>
                             <p className="text-3xl font-bold">{currentWorkoutExercise.sets}</p>
@@ -110,10 +110,22 @@ export default function WorkoutPlayerPage() {
                                 <p className="text-3xl font-bold">{currentWorkoutExercise.reps}</p>
                             </div>
                         )}
+                        {currentWorkoutExercise.weight !== undefined && (
+                             <div>
+                                <p className="text-sm text-muted-foreground">Вес</p>
+                                <p className="text-3xl font-bold">{currentWorkoutExercise.weight}кг</p>
+                            </div>
+                        )}
                         {currentWorkoutExercise.duration && (
                              <div>
                                 <p className="text-sm text-muted-foreground">Длительность</p>
                                 <p className="text-3xl font-bold">{currentWorkoutExercise.duration}с</p>
+                            </div>
+                        )}
+                         {currentWorkoutExercise.distance && (
+                             <div>
+                                <p className="text-sm text-muted-foreground">Дистанция</p>
+                                <p className="text-3xl font-bold">{currentWorkoutExercise.distance}м</p>
                             </div>
                         )}
                     </div>
@@ -123,7 +135,7 @@ export default function WorkoutPlayerPage() {
                             <Timer className="h-5 w-5"/>
                             <span className="text-lg font-semibold">Таймер отдыха</span>
                         </div>
-                        <p className="text-5xl font-bold my-2">60</p>
+                        <p className="text-5xl font-bold my-2">{currentWorkoutExercise.restDuration || 60}</p>
                         <Button variant="outline">Начать отдых</Button>
                     </div>
                 </CardContent>

@@ -15,6 +15,7 @@ export interface WorkoutExercise {
   reps?: number;
   duration?: number; // in seconds
   distance?: number; // in meters
+  weight?: number; // in kg
   restDuration?: number; // in seconds
 }
 

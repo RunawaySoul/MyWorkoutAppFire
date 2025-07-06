@@ -81,9 +81,9 @@ export const workouts: Workout[] = [
     name: 'Силовая на все тело A',
     description: 'Комплексная тренировка на все тело, с фокусом на основные группы мышц.',
     exercises: [
-      { exerciseId: 'ex2', sets: 3, reps: 8 }, // Приседания
-      { exerciseId: 'ex1', sets: 3, reps: 8 }, // Жим лежа
-      { exerciseId: 'ex3', sets: 1, reps: 5 }, // Становая тяга
+      { exerciseId: 'ex2', sets: 3, reps: 8, weight: 100 }, // Приседания
+      { exerciseId: 'ex1', sets: 3, reps: 8, weight: 80 }, // Жим лежа
+      { exerciseId: 'ex3', sets: 1, reps: 5, weight: 120 }, // Становая тяга
     ],
   },
   {
@@ -91,9 +91,9 @@ export const workouts: Workout[] = [
     name: 'Силовая на все тело B',
     description: 'Альтернативная тренировка на все тело для сбалансированной программы.',
     exercises: [
-      { exerciseId: 'ex2', sets: 3, reps: 8 }, // Приседания
-      { exerciseId: 'ex4', sets: 3, reps: 8 }, // Армейский жим
-      { exerciseId: 'ex5', sets: 3, reps: 8 }, // Подтягивания
+      { exerciseId: 'ex2', sets: 3, reps: 8, weight: 105 }, // Приседания
+      { exerciseId: 'ex4', sets: 3, reps: 8, weight: 50 }, // Армейский жим
+      { exerciseId: 'ex5', sets: 3, reps: 8, weight: 10 }, // Подтягивания
     ],
   },
   {
@@ -102,7 +102,7 @@ export const workouts: Workout[] = [
     description: 'Тренировка для улучшения сердечно-сосудистой системы и укрепления кора.',
     exercises: [
       { exerciseId: 'ex7', sets: 1, distance: 3000 }, // Бег
-      { exerciseId: 'ex6', sets: 3, duration: 60 }, // Планка
+      { exerciseId: 'ex6', sets: 3, duration: 60, reps: 1 }, // Планка
     ],
   },
 ];
