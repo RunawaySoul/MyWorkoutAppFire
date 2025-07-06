@@ -1,5 +1,5 @@
-import type { AppData, Exercise, Workout, WorkoutLog, BodyMeasurement } from '@/lib/types';
-import initialDataFromFile from '@/data/db.json';
+import type { AppData } from '@/lib/types';
+import initialDataFromFile from '../../data/db.json';
 
 const LOCAL_STORAGE_KEY = 'myWorkoutAppData';
 
