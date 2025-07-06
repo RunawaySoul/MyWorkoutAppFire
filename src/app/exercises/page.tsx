@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { exercises as initialExercises } from '@/lib/data';
 import type { Exercise } from '@/lib/types';
 import { PlusCircle, MoreVertical, Edit, Trash2, ArrowUpDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -83,7 +82,6 @@ export default function ExercisesPage() {
         setExercises(data.exercises);
       } catch (error) {
         console.error("Failed to load exercises:", error);
-        setExercises(initialExercises); // Fallback to initial data
       }
       setIsDataLoaded(true);
     }
@@ -401,7 +399,7 @@ export default function ExercisesPage() {
                     <div className="grid gap-4 py-4">
                         {viewingExercise.imageUrl && (
                             <div className="relative aspect-video w-full">
-                                <Image src={viewingExercise.imageUrl} alt={viewingExercise.name} fill className="rounded-md object-cover" data-ai-hint={viewingExercise.aiHint} />
+                                <Image src={viewingExercise.imageUrl} alt={viewingExercise.name} fill className="rounded-md object-contain" data-ai-hint={viewingExercise.aiHint} />
                             </div>
                         )}
                         {viewingExercise.description && <p className="text-sm text-muted-foreground">{viewingExercise.description}</p>}

@@ -192,7 +192,7 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
             <div className="relative w-32 h-32 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
               {imagePreview ? (
                 <>
-                  <Image src={imagePreview} alt="Предпросмотр" fill className="object-cover rounded-md" />
+                  <Image src={imagePreview} alt="Предпросмотр" fill className="object-contain rounded-md" />
                   <Button type="button" size="icon" variant="destructive" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={handleRemoveImage}>
                     <X className="h-4 w-4"/>
                   </Button>

@@ -5,7 +5,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from 'next/link';
-import { workouts as initialWorkouts, exercises as initialExercises } from "@/lib/data";
 import type { Workout, Exercise } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,9 +45,6 @@ export default function WorkoutPlayerPage() {
             setAllExercises(data.exercises);
         } catch (error) {
             console.error("Failed to load data:", error);
-            const foundWorkout = initialWorkouts.find((w) => w.id === params.id);
-            setWorkout(foundWorkout || null);
-            setAllExercises(initialExercises);
         }
         setIsDataLoaded(true);
     }
@@ -282,7 +278,7 @@ export default function WorkoutPlayerPage() {
                 {currentExercise.imageUrl && (
                   <CardHeader>
                       <div className="relative aspect-video">
-                          <Image src={currentExercise.imageUrl} alt={currentExercise.name} fill className="object-cover rounded-md" data-ai-hint={currentExercise.aiHint} />
+                          <Image src={currentExercise.imageUrl} alt={currentExercise.name} fill className="object-contain rounded-md" data-ai-hint={currentExercise.aiHint} />
                       </div>
                   </CardHeader>
                 )}
