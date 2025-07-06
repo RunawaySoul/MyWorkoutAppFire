@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
@@ -24,15 +25,15 @@ export default function WorkoutPlayerPage() {
   const [restTimeLeft, setRestTimeLeft] = useState(0);
   const [exerciseTimerActive, setExerciseTimerActive] = useState(false);
   const [exerciseTimeLeft, setExerciseTimeLeft] = useState(0);
+  const [isFinishing, setIsFinishing] = useState(false);
   
   const workoutId = params.id as string;
   const workout = useMemo(() => appData?.workouts.find(w => w.id === workoutId), [appData, workoutId]);
 
-  const saveProgress = useCallback(async (updatedLog: WorkoutLog | null) => {
-    if (!appData || !updatedLog) return;
-    const updatedLogs = appData.workoutLogs.map(log => log.id === updatedLog.id ? updatedLog : log);
-    await saveAppData({ ...appData, workoutLogs: updatedLogs });
-  }, [appData]);
+  const saveProgress = useCallback(async () => {
+    if (!appData || !currentLog || currentLog.status !== 'in-progress') return;
+    await saveAppData({ ...appData });
+  }, [appData, currentLog]);
   
   useEffect(() => {
     async function loadData() {
@@ -79,24 +80,24 @@ export default function WorkoutPlayerPage() {
     if (!currentLog) return;
     const updatedLog = { ...currentLog, ...updates };
     setCurrentLog(updatedLog);
-    const updatedLogs = appData!.workoutLogs.map(log => log.id === updatedLog.id ? updatedLog : log);
-    setAppData(prev => prev ? ({ ...prev, workoutLogs: updatedLogs }) : null);
-  }, [currentLog, appData]);
+    setAppData(prev => {
+        if (!prev) return null;
+        const updatedLogs = prev.workoutLogs.map(log => log.id === updatedLog.id ? updatedLog : log);
+        return { ...prev, workoutLogs: updatedLogs };
+    });
+  }, [currentLog]);
 
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
         if(currentLog && currentLog.status === 'in-progress') {
-            saveAppData(appData!);
+            saveProgress();
         }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
         window.removeEventListener('beforeunload', handleBeforeUnload);
-        if(currentLog && currentLog.status === 'in-progress') {
-            saveProgress(currentLog);
-        }
     }
-  }, [currentLog, saveProgress, appData]);
+  }, [currentLog, saveProgress]);
 
   const goToNextExercise = useCallback(() => {
     if (!workout || currentExerciseIndex >= workout.exercises.length - 1) return;
@@ -107,6 +108,35 @@ export default function WorkoutPlayerPage() {
     setIsResting(false);
   }, [workout, currentExerciseIndex, updateLog]);
 
+  const handleFinishWorkout = useCallback(async (finalStatuses: Record<number, ExerciseStatus>) => {
+    if (!appData || !currentLog || isFinishing) return;
+    setIsFinishing(true);
+
+    const finalLog: WorkoutLog = {
+      ...currentLog,
+      status: 'completed',
+      exerciseStatuses: finalStatuses,
+      endTime: new Date().toISOString(),
+    };
+    
+    const updatedLogs = appData.workoutLogs.map(log => 
+      log.id === finalLog.id ? finalLog : log
+    );
+
+    const newData = { ...appData, workoutLogs: updatedLogs };
+
+    try {
+      await saveAppData(newData);
+      setAppData(newData);
+      setCurrentLog(finalLog);
+      setIsFinished(true);
+    } catch (error) {
+      console.error("Failed to save finished workout:", error);
+    } finally {
+      setIsFinishing(false);
+    }
+  }, [appData, currentLog, isFinishing]);
+
   const handleMarkComplete = useCallback(() => {
     if (!workout || !currentLog) return;
 
@@ -116,12 +146,7 @@ export default function WorkoutPlayerPage() {
     const isLast = currentExerciseIndex >= workout.exercises.length - 1;
 
     if (isLast) {
-      updateLog({
-        exerciseStatuses: newStatuses,
-        status: 'completed',
-        endTime: new Date().toISOString(),
-      });
-      setIsFinished(true);
+        handleFinishWorkout(newStatuses);
     } else {
       updateLog({ exerciseStatuses: newStatuses });
       const restDuration = workout.exercises[currentExerciseIndex]?.restDuration;
@@ -132,7 +157,7 @@ export default function WorkoutPlayerPage() {
         goToNextExercise();
       }
     }
-  }, [workout, currentLog, currentExerciseIndex, updateLog, goToNextExercise]);
+  }, [workout, currentLog, currentExerciseIndex, updateLog, goToNextExercise, handleFinishWorkout]);
 
   const handleSkip = useCallback(() => {
     if (!workout || !currentLog) return;
@@ -143,17 +168,12 @@ export default function WorkoutPlayerPage() {
     const isLast = currentExerciseIndex >= workout.exercises.length - 1;
 
     if (isLast) {
-        updateLog({
-            exerciseStatuses: newStatuses,
-            status: 'completed',
-            endTime: new Date().toISOString()
-        });
-        setIsFinished(true);
+        handleFinishWorkout(newStatuses);
     } else {
         updateLog({ exerciseStatuses: newStatuses });
         goToNextExercise();
     }
-  }, [workout, currentLog, currentExerciseIndex, updateLog, goToNextExercise]);
+  }, [workout, currentLog, currentExerciseIndex, updateLog, goToNextExercise, handleFinishWorkout]);
 
   useEffect(() => {
     if (!workout || isResting || !isDataLoaded || !currentLog) return;
@@ -190,6 +210,12 @@ export default function WorkoutPlayerPage() {
     const intervalId = setInterval(() => setRestTimeLeft((prev) => prev - 1), 1000);
     return () => clearInterval(intervalId);
   }, [isResting, restTimeLeft, goToNextExercise]);
+  
+  const handleExit = () => {
+    saveProgress().then(() => {
+        router.push('/workouts');
+    });
+  }
 
   const formatTime = (totalSeconds: number) => {
     const minutes = Math.floor(totalSeconds / 60);
@@ -278,9 +304,7 @@ export default function WorkoutPlayerPage() {
         <Card>
             <CardHeader>
                 <div className="flex justify-between items-center mb-2">
-                    <Button variant="ghost" size="sm" asChild>
-                        <Link href="/workouts"><ChevronLeft className="mr-2 h-4 w-4"/> Завершить досрочно</Link>
-                    </Button>
+                    <Button variant="ghost" size="sm" onClick={handleExit}><ChevronLeft className="mr-2 h-4 w-4"/> Завершить досрочно</Button>
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
                         <Flame className="h-4 w-4" />
                         <span>{currentExerciseIndex + 1} / {workout.exercises.length}</span>
@@ -362,13 +386,15 @@ export default function WorkoutPlayerPage() {
         </div>
         
         <div className="flex justify-center mt-4 gap-2">
-            <Button variant="outline" onClick={handleSkip} className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
+            <Button variant="outline" onClick={handleSkip} disabled={isFinishing} className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
                 Пропустить <X className="ml-2 h-4 w-4"/>
             </Button>
-            <Button onClick={handleMarkComplete} className="bg-green-600 text-white hover:bg-green-700">
+            <Button onClick={handleMarkComplete} disabled={isFinishing} className="bg-green-600 text-white hover:bg-green-700">
                 Готово <Check className="ml-2 h-4 w-4"/>
             </Button>
         </div>
     </div>
   );
 }
+
+    
