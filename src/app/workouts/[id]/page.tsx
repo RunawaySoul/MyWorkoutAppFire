@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from 'next/link';
@@ -41,8 +41,6 @@ export default function WorkoutPlayerPage() {
                     initialStatuses[index] = 'pending';
                 });
                 setExerciseStatuses(initialStatuses);
-                setExerciseTimeLeft(foundWorkout.exercises[0]?.duration || 0);
-                setRestTimeLeft(foundWorkout.exercises[0]?.restDuration || 60);
             }
             setAllExercises(data.exercises);
         } catch (error) {
@@ -57,6 +55,42 @@ export default function WorkoutPlayerPage() {
         loadData();
     }
   }, [params.id]);
+
+  const setExercise = (index: number) => {
+    if (!workout || index < 0 || index >= workout.exercises.length) {
+        return;
+    }
+    setCurrentExerciseIndex(index);
+    setExerciseTimerActive(false); // This will be handled by the auto-start useEffect
+    setIsResting(false);
+  };
+  
+  const handleNext = useCallback(() => {
+    if (!workout) return;
+    if (currentExerciseIndex < workout.exercises.length - 1) {
+      setExercise(currentExerciseIndex + 1);
+    } else {
+      setIsFinished(true);
+    }
+  }, [workout, currentExerciseIndex]);
+
+
+  // Auto-start timer when exercise changes
+  useEffect(() => {
+    if (!workout || isResting || !isDataLoaded) return;
+    
+    const currentWorkoutEx = workout.exercises[currentExerciseIndex];
+    if (!currentWorkoutEx) return;
+
+    const currentEx = allExercises.find(e => e.id === currentWorkoutEx.exerciseId);
+    
+    if (currentEx?.type === 'timed-distance' && currentWorkoutEx?.duration) {
+      setExerciseTimeLeft(currentWorkoutEx.duration);
+      setExerciseTimerActive(true);
+    } else {
+      setExerciseTimerActive(false);
+    }
+  }, [currentExerciseIndex, workout, allExercises, isResting, isDataLoaded]);
 
   // Timer for the exercise itself
   useEffect(() => {
@@ -80,7 +114,7 @@ export default function WorkoutPlayerPage() {
     if (!isResting || restTimeLeft <= 0) {
       if (restTimeLeft <= 0 && isResting) {
         setIsResting(false);
-        // Optional: Play a sound to indicate rest is over
+        handleNext();
       }
       return;
     }
@@ -90,55 +124,40 @@ export default function WorkoutPlayerPage() {
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [isResting, restTimeLeft]);
-  
-  const setExercise = (index: number) => {
-    if (!workout || index < 0 || index >= workout.exercises.length) {
-        return;
-    }
-    setCurrentExerciseIndex(index);
-    setExerciseTimerActive(false);
-    setIsResting(false);
-    setExerciseTimeLeft(workout.exercises[index]?.duration || 0);
-  };
-
-  const handleNext = () => {
-    if (currentExerciseIndex < workout.exercises.length - 1) {
-      setExercise(currentExerciseIndex + 1);
-    } else {
-      setIsFinished(true);
-    }
-  };
-
-  const handlePrev = () => {
-    if (currentExerciseIndex > 0) {
-      setExercise(currentExerciseIndex - 1);
-    }
-  };
+  }, [isResting, restTimeLeft, handleNext]);
 
   const handleMarkComplete = () => {
     setExerciseStatuses(prev => ({ ...prev, [currentExerciseIndex]: 'completed' }));
-    handleNext();
+    setExerciseTimerActive(false);
+
+    const restDuration = workout?.exercises[currentExerciseIndex]?.restDuration;
+    if (restDuration && restDuration > 0) {
+      setRestTimeLeft(restDuration);
+      setIsResting(true);
+    } else {
+      handleNext();
+    }
   };
 
   const handleSkip = () => {
       setExerciseStatuses(prev => ({ ...prev, [currentExerciseIndex]: 'skipped' }));
+      setExerciseTimerActive(false);
+      setIsResting(false); // Ensure rest is cancelled if skipping
       handleNext();
   };
   
-  const handleStartRest = () => {
-    const restDuration = workout.exercises[currentExerciseIndex].restDuration || 60;
-    setRestTimeLeft(restDuration);
-    setIsResting(true);
-  };
-
   const handleToggleExerciseTimer = () => {
-    if (!exerciseTimerActive && exerciseTimeLeft === 0) {
-        const duration = workout.exercises[currentExerciseIndex].duration || 0;
-        setExerciseTimeLeft(duration);
-    }
     setExerciseTimerActive(prev => !prev);
   };
+  
+  const getNextExerciseName = () => {
+    if (!workout || currentExerciseIndex >= workout.exercises.length - 1) {
+        return "Тренировка почти завершена!";
+    }
+    const nextWorkoutExercise = workout.exercises[currentExerciseIndex + 1];
+    const nextExercise = allExercises.find(e => e.id === nextWorkoutExercise?.exerciseId);
+    return nextExercise?.name || "";
+  }
 
   const formatTime = (totalSeconds: number) => {
     const minutes = Math.floor(totalSeconds / 60);
@@ -183,6 +202,37 @@ export default function WorkoutPlayerPage() {
 
   if(!currentExercise) {
       return <div>Упражнение не найдено.</div>
+  }
+
+  if (isResting) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Card>
+            <CardHeader>
+                <Progress value={progressPercentage} />
+                <div className="flex justify-between items-baseline mt-2">
+                    <CardTitle className="font-headline text-2xl">{workout.name}</CardTitle>
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                        <Flame className="h-4 w-4" />
+                        <span>{currentExerciseIndex + 1} / {workout.exercises.length}</span>
+                    </div>
+                </div>
+            </CardHeader>
+        </Card>
+        <Card className="flex flex-col items-center justify-center text-center p-8 min-h-[400px]">
+            <CardHeader>
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                  <Timer className="h-8 w-8"/>
+                  <CardTitle className="text-3xl font-headline">Отдых</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-8xl font-bold my-4 text-primary">{formatTime(restTimeLeft)}</p>
+              <p className="text-muted-foreground">Следующее упражнение: {getNextExerciseName()}</p>
+            </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -258,28 +308,11 @@ export default function WorkoutPlayerPage() {
                             <p className="text-5xl font-bold my-2 text-accent">
                                 {formatTime(exerciseTimeLeft)}
                             </p>
-                            <Button variant="outline" onClick={handleToggleExerciseTimer}>
-                                {exerciseTimerActive ? 'Пауза' : (exerciseTimeLeft < currentWorkoutExercise.duration ? 'Продолжить' : 'Начать')}
+                            <Button variant="outline" onClick={handleToggleExerciseTimer} disabled={exerciseTimeLeft === 0}>
+                                {exerciseTimerActive ? 'Пауза' : 'Продолжить'}
                             </Button>
                         </div>
                     ) : null}
-
-                    {currentWorkoutExercise.restDuration ? (
-                        <div className="p-4 bg-secondary rounded-lg text-center">
-                            <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                                <Timer className="h-5 w-5"/>
-                                <span className="text-lg font-semibold">Таймер отдыха</span>
-                            </div>
-                             {isResting ? (
-                                <p className="text-5xl font-bold my-2">{formatTime(restTimeLeft)}</p>
-                             ) : (
-                                <>
-                                    <p className="text-5xl font-bold my-2">{formatTime(currentWorkoutExercise.restDuration)}</p>
-                                    <Button variant="outline" onClick={handleStartRest}>Начать отдых</Button>
-                                </>
-                             )}
-                        </div>
-                    ) : null }
                 </CardContent>
             </Card>
         </div>
