@@ -186,18 +186,6 @@
   ],
   "workoutLogs": [
     {
-      "id": "log1751806683614",
-      "workoutId": "w1",
-      "date": "2025-07-06T12:58:03.614Z",
-      "status": "in-progress",
-      "currentExerciseIndex": 2,
-      "exerciseStatuses": {
-        "0": "completed",
-        "1": "completed",
-        "2": "pending"
-      }
-    },
-    {
       "id": "log1751806694289",
       "workoutId": "w3",
       "date": "2025-07-06T12:58:14.289Z",
@@ -212,6 +200,18 @@
       "id": "log1751806701593",
       "workoutId": "w2",
       "date": "2025-07-06T12:58:21.593Z",
+      "status": "in-progress",
+      "currentExerciseIndex": 2,
+      "exerciseStatuses": {
+        "0": "completed",
+        "1": "completed",
+        "2": "pending"
+      }
+    },
+    {
+      "id": "log1751806823476",
+      "workoutId": "w1",
+      "date": "2025-07-06T13:00:23.476Z",
       "status": "in-progress",
       "currentExerciseIndex": 2,
       "exerciseStatuses": {
