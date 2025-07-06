@@ -28,7 +28,7 @@ const formSchema = z.object({
   name: z.string().min(1, { message: 'Название обязательно.' }),
   description: z.string().optional(),
   muscleGroup: z.string().min(1, { message: 'Группа мышц обязательна.' }),
-  type: z.enum(['weighted', 'timed', 'distance'], {
+  type: z.enum(['weighted', 'timed-distance'], {
     required_error: 'Выберите тип.',
   }),
   color: z.string().regex(/^#([0-9a-f]{3,6})$/i, "Введите валидный HEX-код цвета (например, #c0ffee)").optional().or(z.literal('')),
@@ -132,9 +132,8 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="weighted">С весом</SelectItem>
-                  <SelectItem value="timed">На время</SelectItem>
-                  <SelectItem value="distance">На дистанцию</SelectItem>
+                  <SelectItem value="weighted">На подход/повторение</SelectItem>
+                  <SelectItem value="timed-distance">На время/расстояние</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />

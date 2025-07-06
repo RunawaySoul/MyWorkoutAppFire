@@ -50,7 +50,7 @@ export const exercises: Exercise[] = [
     id: 'ex6',
     name: 'Планка',
     description: 'Удерживайте положение, как при отжиманиях, опираясь на предплечья.',
-    type: 'timed',
+    type: 'timed-distance',
     muscleGroup: 'Кор',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'woman plank',
@@ -59,7 +59,7 @@ export const exercises: Exercise[] = [
     id: 'ex7',
     name: 'Бег',
     description: 'Бегите в постоянном темпе на беговой дорожке или на улице.',
-    type: 'distance',
+    type: 'timed-distance',
     muscleGroup: 'Кардио',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'woman running',
@@ -101,7 +101,7 @@ export const workouts: Workout[] = [
     name: 'Кардио и Кор',
     description: 'Тренировка для улучшения сердечно-сосудистой системы и укрепления кора.',
     exercises: [
-      { exerciseId: 'ex7', sets: 1, distance: 3000 }, // Бег
+      { exerciseId: 'ex7', sets: 1, distance: 3000, reps: 1 }, // Бег
       { exerciseId: 'ex6', sets: 3, duration: 60, reps: 1 }, // Планка
     ],
   },

@@ -2,7 +2,7 @@ export interface Exercise {
   id: string;
   name: string;
   description?: string;
-  type: 'weighted' | 'timed' | 'distance';
+  type: 'weighted' | 'timed-distance';
   muscleGroup: string;
   imageUrl: string;
   aiHint?: string;
