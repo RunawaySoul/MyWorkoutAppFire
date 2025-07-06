@@ -315,7 +315,7 @@ export default function ExercisesPage() {
                     <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2">
                         {exercise.defaultSets && <span>{exercise.defaultSets} подх</span>}
                         {exercise.defaultReps != null && <span>× {exercise.defaultReps} повт</span>}
-                        {exercise.defaultWeight != null && exercise.defaultWeight > 0 && <span>@ {exercise.defaultWeight} кг</span>}
+                        {exercise.defaultWeight != null && exercise.defaultWeight > 0 && <span>{exercise.defaultWeight} кг</span>}
                         {exercise.defaultDuration != null && <span>{exercise.defaultDuration}с</span>}
                         {exercise.defaultDistance != null && <span>{exercise.defaultDistance}км</span>}
                     </div>

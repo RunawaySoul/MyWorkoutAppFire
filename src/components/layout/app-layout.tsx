@@ -20,6 +20,7 @@ import {
   LayoutDashboard,
   Repeat,
   History,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -30,6 +31,7 @@ const navItems = [
   { href: "/workouts", label: "Тренировки", icon: Repeat },
   { href: "/exercises", label: "Упражнения", icon: Dumbbell },
   { href: "/history", label: "История", icon: History },
+  { href: "/settings", label: "Настройки", icon: Settings },
 ];
 
 function AppLayoutContent({ children }: { children: ReactNode }) {
@@ -37,10 +39,9 @@ function AppLayoutContent({ children }: { children: ReactNode }) {
   const { setOpenMobile } = useSidebar();
 
   const getPageTitle = () => {
-    const currentItem = navItems.find((item) => {
-      if (item.href === '/') return pathname === '/';
-      return pathname.startsWith(item.href) && item.href !== '/';
-    });
+    // Find the most specific match by reversing the array
+    const currentItem = [...navItems].reverse().find(item => pathname.startsWith(item.href));
+    
     if (currentItem) return currentItem.label;
     if (pathname.startsWith('/workouts/')) return 'Плеер тренировки';
     return "Мои Тренировки";
@@ -65,7 +66,7 @@ function AppLayoutContent({ children }: { children: ReactNode }) {
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === item.href || (item.href === '/workouts' && pathname.startsWith('/workouts/'))}
+                  isActive={item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)}
                   tooltip={{ children: item.label }}
                   onClick={handleLinkClick}
                 >
