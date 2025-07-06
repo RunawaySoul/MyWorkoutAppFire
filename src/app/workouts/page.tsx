@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { workouts as initialWorkouts, exercises as initialExercises } from '@/lib/data';
 import type { Workout, Exercise } from '@/lib/types';
-import { PlusCircle, ArrowRight, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, ArrowRight, MoreVertical, Edit, Trash2, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -40,9 +40,10 @@ import {
   } from "@/components/ui/dropdown-menu"
 import { CreateWorkoutForm } from '@/components/forms/create-workout-form';
 import { getAppData, saveWorkouts } from '@/lib/actions';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
-function WorkoutCard({ workout, exercises, onEdit, onDelete }: { workout: Workout, exercises: Exercise[], onEdit: () => void, onDelete: () => void }) {
+function WorkoutCard({ workout, exercises, onEdit, onDelete, onView }: { workout: Workout, exercises: Exercise[], onEdit: () => void, onDelete: () => void, onView: () => void }) {
   const workoutExercises = workout.exercises
     .map((we) => exercises.find((e) => e.id === we.exerciseId))
     .filter((e): e is Exercise => !!e);
@@ -66,6 +67,10 @@ function WorkoutCard({ workout, exercises, onEdit, onDelete }: { workout: Workou
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onView}>
+                  <Info className="mr-2 h-4 w-4" />
+                  Подробнее
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={onEdit}>
                   <Edit className="mr-2 h-4 w-4" />
                   Редактировать
@@ -106,6 +111,7 @@ export default function WorkoutsPage() {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [deletingWorkoutId, setDeletingWorkoutId] = useState<string | null>(null);
+  const [viewingWorkout, setViewingWorkout] = useState<Workout | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -127,7 +133,6 @@ export default function WorkoutsPage() {
     if (isDataLoaded) {
       saveWorkouts(workouts).catch(error => {
         console.error("Failed to save workouts:", error);
-        // Optionally: show a toast notification for the user
       });
     }
   }, [workouts, isDataLoaded]);
@@ -154,6 +159,10 @@ export default function WorkoutsPage() {
   const handleOpenEditDialog = (workout: Workout) => {
     setEditingWorkout(workout);
     setIsDialogOpen(true);
+  };
+
+  const handleOpenViewDialog = (workout: Workout) => {
+    setViewingWorkout(workout);
   };
 
   const handleOpenDeleteAlert = (workoutId: string) => {
@@ -209,6 +218,7 @@ export default function WorkoutsPage() {
             key={workout.id} 
             workout={workout} 
             exercises={exercises}
+            onView={() => handleOpenViewDialog(workout)}
             onEdit={() => handleOpenEditDialog(workout)}
             onDelete={() => handleOpenDeleteAlert(workout.id)}
             />
@@ -228,6 +238,40 @@ export default function WorkoutsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!viewingWorkout} onOpenChange={(isOpen) => !isOpen && setViewingWorkout(null)}>
+        <DialogContent className="max-w-md">
+            {viewingWorkout && (
+                <>
+                    <DialogHeader>
+                        <DialogTitle>{viewingWorkout.name}</DialogTitle>
+                        <DialogDescription>{viewingWorkout.description}</DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="max-h-[60vh]">
+                      <div className="space-y-4 py-4 pr-6">
+                          {viewingWorkout.exercises.map((we, index) => {
+                              const exercise = exercises.find(e => e.id === we.exerciseId);
+                              if (!exercise) return null;
+                              return (
+                                  <div key={index} className="p-3 rounded-md border bg-muted/50">
+                                      <h4 className="font-semibold">{exercise.name}</h4>
+                                      <ul className="list-disc list-inside text-sm text-muted-foreground mt-2 space-y-1">
+                                          <li>Подходы: {we.sets}</li>
+                                          {we.reps != null && <li>Повторения: {we.reps}</li>}
+                                          {we.weight != null && <li>Вес: {we.weight} кг</li>}
+                                          {we.duration != null && <li>Длительность: {we.duration} сек</li>}
+                                          {we.distance != null && <li>Дистанция: {we.distance} км</li>}
+                                          {we.restDuration != null && <li>Отдых: {we.restDuration} сек</li>}
+                                      </ul>
+                                  </div>
+                              );
+                          })}
+                      </div>
+                    </ScrollArea>
+                </>
+            )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
