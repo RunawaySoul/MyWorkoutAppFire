@@ -39,7 +39,7 @@ export default function WorkoutPlayerPage() {
 
   const handlePrev = () => {
     if (currentExerciseIndex > 0) {
-      setCurrentExerciseIndex(currentExerciseIndex - 1);
+      setCurrentExerciseIndex(currentExerciseIndex + 1);
     }
   };
 
@@ -125,7 +125,7 @@ export default function WorkoutPlayerPage() {
                          {currentWorkoutExercise.distance && (
                              <div>
                                 <p className="text-sm text-muted-foreground">Дистанция</p>
-                                <p className="text-3xl font-bold">{currentWorkoutExercise.distance}м</p>
+                                <p className="text-3xl font-bold">{currentWorkoutExercise.distance}км</p>
                             </div>
                         )}
                     </div>

@@ -32,7 +32,7 @@ const workoutExerciseSchema = z.object({
   sets: z.coerce.number().min(1, 'Минимум 1 подход'),
   reps: z.coerce.number().min(1, 'Минимум 1 повторение').optional(),
   duration: z.coerce.number().min(1, 'Минимум 1 секунда').optional(),
-  distance: z.coerce.number().min(1, 'Минимум 1 метр').optional(),
+  distance: z.coerce.number().gt(0, 'Дистанция должна быть положительным числом').optional(),
   weight: z.coerce.number().min(0, 'Вес не может быть отрицательным').optional(),
   restDuration: z.coerce.number().optional(),
 });
@@ -288,7 +288,7 @@ export function CreateWorkoutForm({
                             name={`exercises.${index}.distance`}
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Дистанция (м)</FormLabel>
+                                <FormLabel>Дистанция (км)</FormLabel>
                                 <FormControl>
                                     <Input type="number" {...field} />
                                 </FormControl>

@@ -101,7 +101,7 @@ export const workouts: Workout[] = [
     name: 'Кардио и Кор',
     description: 'Тренировка для улучшения сердечно-сосудистой системы и укрепления кора.',
     exercises: [
-      { exerciseId: 'ex7', sets: 1, distance: 3000, reps: 1 }, // Бег
+      { exerciseId: 'ex7', sets: 1, distance: 3, reps: 1 }, // Бег
       { exerciseId: 'ex6', sets: 3, duration: 60, reps: 1 }, // Планка
     ],
   },
