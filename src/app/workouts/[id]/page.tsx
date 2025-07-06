@@ -98,34 +98,62 @@ export default function WorkoutPlayerPage() {
     }
   }, [currentLog, saveProgress, appData]);
 
-  const handleNext = useCallback(() => {
-    if (!workout || !currentLog) return;
-    if (currentExerciseIndex < workout.exercises.length - 1) {
-      const nextIndex = currentExerciseIndex + 1;
-      setCurrentExerciseIndex(nextIndex);
-      updateLog({ currentExerciseIndex: nextIndex });
-    } else {
-      updateLog({ status: 'completed', endTime: new Date().toISOString() });
-      setIsFinished(true);
-    }
-    setExerciseTimerActive(false); 
+  const goToNextExercise = useCallback(() => {
+    if (!workout || currentExerciseIndex >= workout.exercises.length - 1) return;
+    const nextIndex = currentExerciseIndex + 1;
+    setCurrentExerciseIndex(nextIndex);
+    updateLog({ currentExerciseIndex: nextIndex });
+    setExerciseTimerActive(false);
     setIsResting(false);
-  }, [workout, currentLog, currentExerciseIndex, updateLog]);
+  }, [workout, currentExerciseIndex, updateLog]);
 
   const handleMarkComplete = useCallback(() => {
     if (!workout || !currentLog) return;
-    const newStatuses = { ...currentLog.exerciseStatuses, [currentExerciseIndex]: 'completed' as ExerciseStatus };
-    updateLog({ exerciseStatuses: newStatuses });
-    setExerciseTimerActive(false);
 
-    const restDuration = workout.exercises[currentExerciseIndex]?.restDuration;
-    if (restDuration && restDuration > 0 && currentExerciseIndex < workout.exercises.length - 1) {
-      setRestTimeLeft(restDuration);
-      setIsResting(true);
+    const newStatuses = { ...currentLog.exerciseStatuses, [currentExerciseIndex]: 'completed' as ExerciseStatus };
+    setExerciseTimerActive(false);
+    
+    const isLast = currentExerciseIndex >= workout.exercises.length - 1;
+
+    if (isLast) {
+      updateLog({
+        exerciseStatuses: newStatuses,
+        status: 'completed',
+        endTime: new Date().toISOString(),
+      });
+      setIsFinished(true);
     } else {
-      handleNext();
+      updateLog({ exerciseStatuses: newStatuses });
+      const restDuration = workout.exercises[currentExerciseIndex]?.restDuration;
+      if (restDuration && restDuration > 0) {
+        setRestTimeLeft(restDuration);
+        setIsResting(true);
+      } else {
+        goToNextExercise();
+      }
     }
-  }, [workout, currentLog, currentExerciseIndex, handleNext, updateLog]);
+  }, [workout, currentLog, currentExerciseIndex, updateLog, goToNextExercise]);
+
+  const handleSkip = useCallback(() => {
+    if (!workout || !currentLog) return;
+    const newStatuses = { ...currentLog.exerciseStatuses, [currentExerciseIndex]: 'skipped' as ExerciseStatus };
+    setExerciseTimerActive(false);
+    setIsResting(false); 
+
+    const isLast = currentExerciseIndex >= workout.exercises.length - 1;
+
+    if (isLast) {
+        updateLog({
+            exerciseStatuses: newStatuses,
+            status: 'completed',
+            endTime: new Date().toISOString()
+        });
+        setIsFinished(true);
+    } else {
+        updateLog({ exerciseStatuses: newStatuses });
+        goToNextExercise();
+    }
+  }, [workout, currentLog, currentExerciseIndex, updateLog, goToNextExercise]);
 
   useEffect(() => {
     if (!workout || isResting || !isDataLoaded || !currentLog) return;
@@ -154,21 +182,14 @@ export default function WorkoutPlayerPage() {
 
   useEffect(() => {
     if (!isResting || restTimeLeft <= 0) {
-      if (restTimeLeft <= 0 && isResting) handleNext();
+      if (restTimeLeft <= 0 && isResting) {
+        goToNextExercise();
+      }
       return;
     }
     const intervalId = setInterval(() => setRestTimeLeft((prev) => prev - 1), 1000);
     return () => clearInterval(intervalId);
-  }, [isResting, restTimeLeft, handleNext]);
-
-  const handleSkip = () => {
-      if(!currentLog) return;
-      const newStatuses = { ...currentLog.exerciseStatuses, [currentExerciseIndex]: 'skipped' as ExerciseStatus };
-      updateLog({ exerciseStatuses: newStatuses });
-      setExerciseTimerActive(false);
-      setIsResting(false); 
-      handleNext();
-  };
+  }, [isResting, restTimeLeft, goToNextExercise]);
 
   const formatTime = (totalSeconds: number) => {
     const minutes = Math.floor(totalSeconds / 60);
