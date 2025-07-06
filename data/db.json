@@ -126,6 +126,20 @@
           "restDuration": 30
         }
       ]
+    },
+    {
+      "id": "w1751807427581",
+      "name": "Восстанавливающая",
+      "description": "Восстанволение",
+      "exercises": [
+        {
+          "exerciseId": "ex6",
+          "sets": 3,
+          "reps": 1,
+          "duration": 60,
+          "restDuration": 30
+        }
+      ]
     }
   ],
   "workoutLogs": [
@@ -166,6 +180,17 @@
         "1": "completed"
       },
       "endTime": "2025-07-06T13:05:36.969Z"
+    },
+    {
+      "id": "log1751807432998",
+      "workoutId": "w1751807427581",
+      "date": "2025-07-06T13:10:32.998Z",
+      "status": "completed",
+      "currentExerciseIndex": 0,
+      "exerciseStatuses": {
+        "0": "completed"
+      },
+      "endTime": "2025-07-06T13:10:51.666Z"
     }
   ],
   "bodyMeasurements": []
