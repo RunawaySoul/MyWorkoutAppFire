@@ -38,6 +38,7 @@ import {
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu"
 import { CreateExerciseForm } from '@/components/forms/create-exercise-form';
+import { getAppData, saveExercises } from '@/lib/actions';
 
 function ExerciseCard({ 
     exercise, 
@@ -112,23 +113,25 @@ export default function ExercisesPage() {
   const [viewingExercise, setViewingExercise] = useState<Exercise | null>(null);
 
   useEffect(() => {
-    try {
-      const savedExercises = localStorage.getItem('exercises');
-      if (savedExercises) {
-        setExercises(JSON.parse(savedExercises));
-      } else {
-        setExercises(initialExercises);
+    async function loadData() {
+      try {
+        const data = await getAppData();
+        setExercises(data.exercises);
+      } catch (error) {
+        console.error("Failed to load exercises:", error);
+        setExercises(initialExercises); // Fallback to initial data
       }
-    } catch (error) {
-      console.error("Failed to load exercises from localStorage", error);
-      setExercises(initialExercises);
+      setIsDataLoaded(true);
     }
-    setIsDataLoaded(true);
+    loadData();
   }, []);
 
   useEffect(() => {
     if (isDataLoaded) {
-      localStorage.setItem('exercises', JSON.stringify(exercises));
+      saveExercises(exercises).catch(error => {
+        console.error("Failed to save exercises:", error);
+        // Optionally: show a toast notification for the user
+      });
     }
   }, [exercises, isDataLoaded]);
 

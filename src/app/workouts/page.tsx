@@ -39,6 +39,8 @@ import {
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu"
 import { CreateWorkoutForm } from '@/components/forms/create-workout-form';
+import { getAppData, saveWorkouts } from '@/lib/actions';
+
 
 function WorkoutCard({ workout, exercises, onEdit, onDelete }: { workout: Workout, exercises: Exercise[], onEdit: () => void, onDelete: () => void }) {
   const workoutExercises = workout.exercises
@@ -106,31 +108,27 @@ export default function WorkoutsPage() {
   const [deletingWorkoutId, setDeletingWorkoutId] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const savedWorkouts = localStorage.getItem('workouts');
-      if (savedWorkouts) {
-        setWorkouts(JSON.parse(savedWorkouts));
-      } else {
-        setWorkouts(initialWorkouts);
-      }
-
-      const savedExercises = localStorage.getItem('exercises');
-      if (savedExercises) {
-        setExercises(JSON.parse(savedExercises));
-      } else {
-        setExercises(initialExercises);
-      }
-    } catch (error) {
-      console.error("Failed to load data from localStorage", error);
-      setWorkouts(initialWorkouts);
-      setExercises(initialExercises);
+    async function loadData() {
+        try {
+            const data = await getAppData();
+            setWorkouts(data.workouts);
+            setExercises(data.exercises);
+        } catch (error) {
+            console.error("Failed to load data:", error);
+            setWorkouts(initialWorkouts);
+            setExercises(initialExercises);
+        }
+        setIsDataLoaded(true);
     }
-    setIsDataLoaded(true);
+    loadData();
   }, []);
 
   useEffect(() => {
     if (isDataLoaded) {
-      localStorage.setItem('workouts', JSON.stringify(workouts));
+      saveWorkouts(workouts).catch(error => {
+        console.error("Failed to save workouts:", error);
+        // Optionally: show a toast notification for the user
+      });
     }
   }, [workouts, isDataLoaded]);
 

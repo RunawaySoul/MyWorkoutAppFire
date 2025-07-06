@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, ChevronRight, Timer, Flame, CheckCircle } from "lucide-react";
+import { getAppData } from "@/lib/actions";
 
 export default function WorkoutPlayerPage() {
   const params = useParams();
@@ -20,22 +21,23 @@ export default function WorkoutPlayerPage() {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      const savedWorkouts = localStorage.getItem('workouts');
-      const workouts: Workout[] = savedWorkouts ? JSON.parse(savedWorkouts) : initialWorkouts;
-      const foundWorkout = workouts.find((w) => w.id === params.id);
-      setWorkout(foundWorkout || null);
-
-      const savedExercises = localStorage.getItem('exercises');
-      const exercises: Exercise[] = savedExercises ? JSON.parse(savedExercises) : initialExercises;
-      setAllExercises(exercises);
-    } catch (error) {
-      console.error("Failed to load data from localStorage", error);
-      const foundWorkout = initialWorkouts.find((w) => w.id === params.id);
-      setWorkout(foundWorkout || null);
-      setAllExercises(initialExercises);
+    async function loadData() {
+        try {
+            const data = await getAppData();
+            const foundWorkout = data.workouts.find((w) => w.id === params.id);
+            setWorkout(foundWorkout || null);
+            setAllExercises(data.exercises);
+        } catch (error) {
+            console.error("Failed to load data:", error);
+            const foundWorkout = initialWorkouts.find((w) => w.id === params.id);
+            setWorkout(foundWorkout || null);
+            setAllExercises(initialExercises);
+        }
+        setIsDataLoaded(true);
     }
-    setIsDataLoaded(true);
+    if (params.id) {
+        loadData();
+    }
   }, [params.id]);
 
   if (!isDataLoaded) {
