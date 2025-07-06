@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Workout, Exercise } from '@/lib/types';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -69,7 +69,7 @@ export function CreateWorkoutForm({
     },
   });
   
-  const { fields, append, remove, replace } = useFieldArray({
+  const { fields, append, remove, replace, swap } = useFieldArray({
     control: form.control,
     name: 'exercises',
   });
@@ -109,14 +109,10 @@ export function CreateWorkoutForm({
     }
   };
 
-  const getExerciseNameById = (id: string) => {
-    return allExercises.find((e) => e.id === id)?.name || 'Неизвестное';
+  const getExerciseById = (id: string) => {
+    return allExercises.find((e) => e.id === id);
   };
   
-  const getExerciseTypeById = (id: string) => {
-    return allExercises.find((e) => e.id === id)?.type;
-  }
-
   function onSubmit(values: z.infer<typeof formSchema>) {
     onFormSubmit(values, initialData?.id);
   }
@@ -178,22 +174,44 @@ export function CreateWorkoutForm({
         <ScrollArea className="h-64 pr-4">
           <div className="space-y-4">
             {fields.map((field, index) => {
-              const exerciseType = getExerciseTypeById(field.exerciseId);
+              const exercise = getExerciseById(field.exerciseId);
+              if (!exercise) return null;
+              
+              const exerciseType = exercise.type;
+              const exerciseColor = exercise.color;
+
               return (
-                <Card key={field.id} className="p-4">
+                <Card key={field.id} className="p-4 overflow-hidden" style={{ borderLeft: `4px solid ${exerciseColor || 'hsl(var(--border))'}` }}>
                   <CardContent className="p-0">
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="font-semibold">
-                        {getExerciseNameById(field.exerciseId)}
-                      </h4>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => remove(index)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1 pr-2">
+                          <h4 className="font-semibold">
+                              {exercise.name}
+                          </h4>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
+                            {form.watch(`exercises.${index}.sets`) && <span><span className="font-medium">{form.watch(`exercises.${index}.sets`)}</span> подх</span>}
+                            {form.watch(`exercises.${index}.reps`) && <span>× <span className="font-medium">{form.watch(`exercises.${index}.reps`)}</span></span>}
+                            {form.watch(`exercises.${index}.weight`) != null && <span>@ <span className="font-medium">{form.watch(`exercises.${index}.weight`)}</span>кг</span>}
+                            {form.watch(`exercises.${index}.duration`) && <span><span className="font-medium">{form.watch(`exercises.${index}.duration`)}</span>с</span>}
+                            {form.watch(`exercises.${index}.distance`) && <span><span className="font-medium">{form.watch(`exercises.${index}.distance`)}</span>км</span>}
+                          </div>
+                      </div>
+                      <div className="flex items-center -mr-2">
+                        <Button type="button" variant="ghost" size="icon" disabled={index === 0} onClick={() => swap(index, index - 1)}>
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="icon" disabled={index === fields.length - 1} onClick={() => swap(index, index + 1)}>
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => remove(index)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       <FormField
@@ -201,7 +219,7 @@ export function CreateWorkoutForm({
                         name={`exercises.${index}.sets`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Подходы</FormLabel>
+                            <FormLabel>Подх</FormLabel>
                             <FormControl>
                               <Input type="number" {...field} />
                             </FormControl>
@@ -215,7 +233,7 @@ export function CreateWorkoutForm({
                         name={`exercises.${index}.reps`}
                         render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Повторения</FormLabel>
+                            <FormLabel>Повт</FormLabel>
                             <FormControl>
                                 <Input type="number" {...field} />
                             </FormControl>
@@ -260,7 +278,7 @@ export function CreateWorkoutForm({
                             name={`exercises.${index}.distance`}
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Дистанция (км)</FormLabel>
+                                <FormLabel>Дист. (км)</FormLabel>
                                 <FormControl>
                                     <Input type="number" step="0.01" {...field} />
                                 </FormControl>
