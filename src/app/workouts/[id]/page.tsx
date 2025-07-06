@@ -1,4 +1,4 @@
-import initialData from "@/data/db.json";
+import initialData from "../../../../data/db.json";
 import { WorkoutPlayer } from "@/components/workout-player";
 import type { AppData } from "@/lib/types";
 
