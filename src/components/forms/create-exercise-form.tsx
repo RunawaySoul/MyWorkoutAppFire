@@ -31,6 +31,7 @@ const formSchema = z.object({
   type: z.enum(['weighted', 'timed-distance'], {
     required_error: 'Выберите тип.',
   }),
+  imageUrl: z.string().url({ message: "Пожалуйста, введите действительный URL." }).optional().or(z.literal('')),
   color: z.string().regex(/^#([0-9a-f]{3,6})$/i, "Введите валидный HEX-код цвета (например, #c0ffee)").optional().or(z.literal('')),
   defaultSets: z.coerce.number().optional(),
   defaultReps: z.coerce.number().optional(),
@@ -41,7 +42,7 @@ const formSchema = z.object({
 });
 
 type CreateExerciseFormProps = {
-  onFormSubmit: (data: Omit<Exercise, 'id' | 'imageUrl' | 'aiHint'>, id?: string) => void;
+  onFormSubmit: (data: Omit<Exercise, 'id' | 'aiHint'>, id?: string) => void;
   onCancel: () => void;
   initialData?: Exercise | null;
 };
@@ -53,6 +54,7 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
       name: '',
       description: '',
       muscleGroup: '',
+      imageUrl: '',
       color: '',
       defaultSets: undefined,
       defaultReps: undefined,
@@ -72,6 +74,7 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
             description: initialData.description || '',
             muscleGroup: initialData.muscleGroup,
             type: initialData.type,
+            imageUrl: initialData.imageUrl || '',
             color: initialData.color || '',
             defaultSets: initialData.defaultSets,
             defaultReps: initialData.defaultReps,
@@ -85,6 +88,7 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
             name: '',
             description: '',
             muscleGroup: '',
+            imageUrl: '',
             color: '#16a34a',
             type: undefined,
             defaultSets: undefined,
@@ -143,6 +147,20 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
               <FormLabel>Описание (необязательно)</FormLabel>
               <FormControl>
                 <Textarea placeholder="Опишите как выполнять упражнение" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="imageUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>URL изображения (необязательно)</FormLabel>
+              <FormControl>
+                <Input placeholder="https://placehold.co/600x400.png" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

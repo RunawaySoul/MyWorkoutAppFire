@@ -278,12 +278,14 @@ export default function WorkoutPlayerPage() {
         
         <div className="grid md:grid-cols-2 gap-4">
             <Card>
-                <CardHeader>
-                    <div className="relative aspect-video">
-                        <Image src={currentExercise.imageUrl} alt={currentExercise.name} fill className="object-cover rounded-md" data-ai-hint={currentExercise.aiHint} />
-                    </div>
-                </CardHeader>
-                <CardContent>
+                {currentExercise.imageUrl && (
+                  <CardHeader>
+                      <div className="relative aspect-video">
+                          <Image src={currentExercise.imageUrl} alt={currentExercise.name} fill className="object-cover rounded-md" data-ai-hint={currentExercise.aiHint} />
+                      </div>
+                  </CardHeader>
+                )}
+                <CardContent className={!currentExercise.imageUrl ? "pt-6" : ""}>
                     <h3 className="font-bold text-xl font-headline">{currentExercise.name}</h3>
                     <p className="text-muted-foreground mt-2">{currentExercise.description}</p>
                 </CardContent>

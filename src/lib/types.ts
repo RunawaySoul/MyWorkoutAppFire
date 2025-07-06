@@ -4,7 +4,7 @@ export interface Exercise {
   description?: string;
   type: 'weighted' | 'timed-distance';
   muscleGroup: string;
-  imageUrl: string;
+  imageUrl?: string;
   aiHint?: string;
   color?: string;
   defaultSets?: number;

@@ -150,18 +150,20 @@ export default function ExercisesPage() {
   };
 
   const handleSaveExercise = (
-    data: Omit<Exercise, 'id' | 'imageUrl' | 'aiHint'>,
+    data: Omit<Exercise, 'id' | 'aiHint'>,
     id?: string
   ) => {
     if (id) {
       setExercises((prev) =>
-        prev.map((ex) => (ex.id === id ? { ...ex, ...data, color: data.color || ex.color } : ex))
+        prev.map((ex) =>
+          ex.id === id ? { ...ex, ...data, imageUrl: data.imageUrl || undefined } : ex
+        )
       );
     } else {
       const newExercise: Exercise = {
         id: `ex${Date.now()}`,
         ...data,
-        imageUrl: 'https://placehold.co/600x400.png',
+        imageUrl: data.imageUrl || undefined,
         aiHint: data.name.toLowerCase().split(' ').slice(0, 2).join(' '),
       };
       setExercises((prev) => [...prev, newExercise]);
@@ -397,9 +399,11 @@ export default function ExercisesPage() {
                         <DialogDescription>{viewingExercise.muscleGroup}</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="relative aspect-video w-full">
-                            <Image src={viewingExercise.imageUrl} alt={viewingExercise.name} fill className="rounded-md object-cover" data-ai-hint={viewingExercise.aiHint} />
-                        </div>
+                        {viewingExercise.imageUrl && (
+                            <div className="relative aspect-video w-full">
+                                <Image src={viewingExercise.imageUrl} alt={viewingExercise.name} fill className="rounded-md object-cover" data-ai-hint={viewingExercise.aiHint} />
+                            </div>
+                        )}
                         {viewingExercise.description && <p className="text-sm text-muted-foreground">{viewingExercise.description}</p>}
                         <div className="space-y-2 rounded-md border p-4 bg-muted/50">
                             <h4 className="font-medium text-sm text-foreground">Значения по умолчанию:</h4>
