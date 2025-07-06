@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { exercises as initialExercises } from '@/lib/data';
 import type { Exercise } from '@/lib/types';
-import { PlusCircle, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, MoreVertical, Edit, Trash2, ArrowUpDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -37,71 +38,27 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { CreateExerciseForm } from '@/components/forms/create-exercise-form';
 import { getAppData, saveExercises } from '@/lib/actions';
 
-function ExerciseCard({ 
-    exercise, 
-    onEdit, 
-    onDelete,
-    onViewDetails
-}: { 
-    exercise: Exercise;
-    onEdit: () => void;
-    onDelete: () => void;
-    onViewDetails: () => void;
-}) {
-  return (
-    <Card className="flex flex-col border-t-4" style={{ borderColor: exercise.color || 'hsl(var(--primary))' }}>
-      <CardHeader className="p-0">
-        <div className="relative aspect-video w-full">
-          <Image
-            src={exercise.imageUrl}
-            alt={exercise.name}
-            fill
-            className="rounded-t-md object-cover"
-            data-ai-hint={exercise.aiHint}
-          />
-           <div className="absolute top-2 right-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/50 hover:bg-background/80">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onEdit}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Редактировать
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Удалить
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="flex-grow p-4">
-        <CardTitle className="text-lg font-headline">{exercise.name}</CardTitle>
-        <Badge variant="secondary" className="mt-2">
-          {exercise.muscleGroup}
-        </Badge>
-        {exercise.description && (
-            <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                {exercise.description}
-            </p>
-        )}
-      </CardContent>
-      <CardFooter className="p-4 pt-0">
-        <Button variant="outline" size="sm" onClick={onViewDetails}>
-          Подробнее
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-}
+type SortKey = keyof Exercise | '';
 
 export default function ExercisesPage() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -111,6 +68,13 @@ export default function ExercisesPage() {
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [deletingExerciseId, setDeletingExerciseId] = useState<string | null>(null);
   const [viewingExercise, setViewingExercise] = useState<Exercise | null>(null);
+  
+  // State for new features
+  const [searchTerm, setSearchTerm] = useState('');
+  const [muscleGroupFilter, setMuscleGroupFilter] = useState('all');
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({ key: 'name', direction: 'asc' });
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -130,10 +94,60 @@ export default function ExercisesPage() {
     if (isDataLoaded) {
       saveExercises(exercises).catch(error => {
         console.error("Failed to save exercises:", error);
-        // Optionally: show a toast notification for the user
       });
     }
   }, [exercises, isDataLoaded]);
+
+  const muscleGroups = useMemo(() => {
+    const allGroups = exercises.map(ex => ex.muscleGroup);
+    return ['all', ...Array.from(new Set(allGroups)).sort()];
+  }, [exercises]);
+
+  const displayedExercises = useMemo(() => {
+    return exercises
+      .filter(ex => 
+        ex.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        (muscleGroupFilter === 'all' || ex.muscleGroup === muscleGroupFilter)
+      )
+      .sort((a, b) => {
+        if (!sortConfig.key) return 0;
+        const key = sortConfig.key;
+        const aValue = a[key] ?? '';
+        const bValue = b[key] ?? '';
+
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+  }, [exercises, searchTerm, muscleGroupFilter, sortConfig]);
+
+  const handleSort = (key: SortKey) => {
+    if(!key) return;
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const handleSelect = (id: string, checked: boolean) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(id);
+      } else {
+        newSet.delete(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(displayedExercises.map(ex => ex.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
 
   const handleSaveExercise = (
     data: Omit<Exercise, 'id' | 'imageUrl' | 'aiHint'>,
@@ -183,6 +197,12 @@ export default function ExercisesPage() {
     setDeletingExerciseId(null);
   };
 
+  const handleConfirmBulkDelete = () => {
+    setExercises(prev => prev.filter(ex => !selectedIds.has(ex.id)));
+    setSelectedIds(new Set());
+    setIsBulkDeleteAlertOpen(false);
+  }
+
   const handleCancelDialog = () => {
     setIsDialogOpen(false);
     setEditingExercise(null);
@@ -218,17 +238,126 @@ export default function ExercisesPage() {
           </DialogContent>
         </Dialog>
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {exercises.map((exercise) => (
-          <ExerciseCard 
-            key={exercise.id} 
-            exercise={exercise} 
-            onEdit={() => handleOpenEditDialog(exercise)}
-            onDelete={() => handleOpenDeleteAlert(exercise.id)}
-            onViewDetails={() => handleOpenViewDialog(exercise)}
+      
+      {/* Filters and Bulk Actions */}
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          <div className="flex flex-col md:flex-row gap-2">
+            <Input
+              placeholder="Поиск по названию..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-sm"
             />
-        ))}
+            <Select value={muscleGroupFilter} onValueChange={setMuscleGroupFilter}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Фильтр по группе мышц" />
+              </SelectTrigger>
+              <SelectContent>
+                {muscleGroups.map(group => (
+                  <SelectItem key={group} value={group}>
+                    {group === 'all' ? 'Все группы мышц' : group}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {selectedIds.size > 0 && (
+            <div className="flex items-center justify-between p-2 bg-muted rounded-md">
+              <span className="text-sm font-medium">{selectedIds.size} выбрано</span>
+              <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteAlertOpen(true)}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Удалить выбранные
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Exercises Table */}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[50px]">
+                <Checkbox
+                  checked={selectedIds.size > 0 && selectedIds.size === displayedExercises.length}
+                  onCheckedChange={(checked) => handleSelectAll(checked === true)}
+                />
+              </TableHead>
+              <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
+                <div className="flex items-center gap-2">
+                  Название
+                  {sortConfig.key === 'name' && <ArrowUpDown className="h-4 w-4 text-muted-foreground" />}
+                </div>
+              </TableHead>
+              <TableHead className="cursor-pointer" onClick={() => handleSort('muscleGroup')}>
+                <div className="flex items-center gap-2">
+                  Группа мышц
+                  {sortConfig.key === 'muscleGroup' && <ArrowUpDown className="h-4 w-4 text-muted-foreground" />}
+                </div>
+              </TableHead>
+              <TableHead className="cursor-pointer hidden md:table-cell" onClick={() => handleSort('type')}>
+                <div className="flex items-center gap-2">
+                  Тип
+                  {sortConfig.key === 'type' && <ArrowUpDown className="h-4 w-4 text-muted-foreground" />}
+                </div>
+              </TableHead>
+              <TableHead className="text-right w-[80px]">Действия</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {displayedExercises.length > 0 ? (
+              displayedExercises.map((exercise) => (
+                <TableRow key={exercise.id} data-state={selectedIds.has(exercise.id) ? "selected" : ""}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(exercise.id)}
+                      onCheckedChange={(checked) => handleSelect(exercise.id, checked === true)}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{exercise.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" style={{
+                      backgroundColor: exercise.color,
+                      color: '#fff', // A simple contrast color, might need a more complex logic
+                    }}>{exercise.muscleGroup}</Badge>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">{exercise.type === 'weighted' ? 'На подход/повторение' : 'На время/расстояние'}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleOpenViewDialog(exercise)}>Подробнее</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleOpenEditDialog(exercise)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Редактировать
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleOpenDeleteAlert(exercise.id)} className="text-destructive focus:text-destructive">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Удалить
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center h-24">
+                  Упражнения не найдены.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
+
+      {/* Dialogs */}
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -244,6 +373,21 @@ export default function ExercisesPage() {
         </AlertDialogContent>
       </AlertDialog>
       
+      <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Это действие необратимо. {selectedIds.size} упражнения будут навсегда удалены.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Удалить</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={!!viewingExercise} onOpenChange={(isOpen) => !isOpen && setViewingExercise(null)}>
         <DialogContent className="max-w-md">
             {viewingExercise && (
@@ -276,3 +420,6 @@ export default function ExercisesPage() {
     </div>
   );
 }
+
+
+    
