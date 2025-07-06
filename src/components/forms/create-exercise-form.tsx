@@ -272,7 +272,7 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
                         name="defaultSets"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Подходы</FormLabel>
+                            <FormLabel>Подх</FormLabel>
                             <FormControl>
                               <Input type="number" placeholder="3" {...field} />
                             </FormControl>
@@ -285,7 +285,7 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
                         name="defaultReps"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Повторы</FormLabel>
+                            <FormLabel>Повт</FormLabel>
                             <FormControl>
                               <Input type="number" placeholder="10" {...field} />
                             </FormControl>
@@ -315,7 +315,7 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
                         name="defaultSets"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Подходы</FormLabel>
+                            <FormLabel>Подх</FormLabel>
                             <FormControl>
                               <Input type="number" placeholder="3" {...field} />
                             </FormControl>
@@ -328,7 +328,7 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
                         name="defaultReps"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Повторы</FormLabel>
+                            <FormLabel>Повт</FormLabel>
                             <FormControl>
                               <Input type="number" placeholder="1" {...field} />
                             </FormControl>
@@ -354,7 +354,7 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
                         name="defaultDistance"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Дистанция (км)</FormLabel>
+                            <FormLabel>Дист. (км)</FormLabel>
                             <FormControl>
                               <Input type="number" placeholder="1" step="0.1" {...field} />
                             </FormControl>
