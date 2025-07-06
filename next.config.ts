@@ -1,6 +1,6 @@
 import type {NextConfig} from 'next';
 
-const repoName = 'nextn';
+const repoName = 'MyWorkoutAppFire';
 
 const nextConfig: NextConfig = {
   output: 'export',
