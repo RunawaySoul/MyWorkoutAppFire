@@ -118,7 +118,15 @@ export function CreateWorkoutForm({
       (e) => e.id === selectedExercise
     );
     if (exerciseToAdd && !fields.some(f => f.exerciseId === exerciseToAdd.id)) {
-      append({ exerciseId: exerciseToAdd.id, sets: 3, reps: 10, weight: 50, restDuration: 60 });
+      append({ 
+        exerciseId: exerciseToAdd.id, 
+        sets: exerciseToAdd.defaultSets || 3, 
+        reps: exerciseToAdd.defaultReps,
+        weight: exerciseToAdd.defaultWeight,
+        duration: exerciseToAdd.defaultDuration,
+        distance: exerciseToAdd.defaultDistance,
+        restDuration: exerciseToAdd.defaultRestDuration || 60,
+      });
       setSelectedExercise('');
     }
   };
@@ -290,7 +298,7 @@ export function CreateWorkoutForm({
                                 <FormItem>
                                 <FormLabel>Дистанция (км)</FormLabel>
                                 <FormControl>
-                                    <Input type="number" {...field} />
+                                    <Input type="number" step="0.01" {...field} />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>

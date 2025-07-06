@@ -7,6 +7,12 @@ export interface Exercise {
   imageUrl: string;
   aiHint?: string;
   color?: string;
+  defaultSets?: number;
+  defaultReps?: number;
+  defaultWeight?: number;
+  defaultDuration?: number; // in seconds
+  defaultDistance?: number; // in kilometers
+  defaultRestDuration?: number; // in seconds
 }
 
 export interface WorkoutExercise {

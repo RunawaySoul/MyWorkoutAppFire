@@ -9,6 +9,10 @@ export const exercises: Exercise[] = [
     muscleGroup: 'Грудь',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'barbell bench',
+    defaultSets: 3,
+    defaultReps: 8,
+    defaultWeight: 80,
+    defaultRestDuration: 90,
   },
   {
     id: 'ex2',
@@ -18,6 +22,10 @@ export const exercises: Exercise[] = [
     muscleGroup: 'Ноги',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'barbell squat',
+    defaultSets: 3,
+    defaultReps: 8,
+    defaultWeight: 100,
+    defaultRestDuration: 120,
   },
   {
     id: 'ex3',
@@ -27,6 +35,10 @@ export const exercises: Exercise[] = [
     muscleGroup: 'Спина',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'barbell deadlift',
+    defaultSets: 1,
+    defaultReps: 5,
+    defaultWeight: 120,
+    defaultRestDuration: 180,
   },
   {
     id: 'ex4',
@@ -36,6 +48,10 @@ export const exercises: Exercise[] = [
     muscleGroup: 'Плечи',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'overhead press',
+    defaultSets: 3,
+    defaultReps: 8,
+    defaultWeight: 50,
+    defaultRestDuration: 90,
   },
   {
     id: 'ex5',
@@ -45,6 +61,10 @@ export const exercises: Exercise[] = [
     muscleGroup: 'Спина',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'man pullup',
+    defaultSets: 3,
+    defaultReps: 10,
+    defaultWeight: 0,
+    defaultRestDuration: 60,
   },
   {
     id: 'ex6',
@@ -54,6 +74,9 @@ export const exercises: Exercise[] = [
     muscleGroup: 'Кор',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'woman plank',
+    defaultSets: 3,
+    defaultDuration: 60,
+    defaultRestDuration: 30,
   },
    {
     id: 'ex7',
@@ -63,6 +86,10 @@ export const exercises: Exercise[] = [
     muscleGroup: 'Кардио',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'woman running',
+    defaultSets: 1,
+    defaultDistance: 3,
+    defaultDuration: 1200,
+    defaultRestDuration: 0,
   },
   {
     id: 'ex8',
@@ -72,6 +99,10 @@ export const exercises: Exercise[] = [
     muscleGroup: 'Бицепс',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'dumbbell curl',
+    defaultSets: 3,
+    defaultReps: 12,
+    defaultWeight: 15,
+    defaultRestDuration: 60,
   },
 ];
 
@@ -101,7 +132,7 @@ export const workouts: Workout[] = [
     name: 'Кардио и Кор',
     description: 'Тренировка для улучшения сердечно-сосудистой системы и укрепления кора.',
     exercises: [
-      { exerciseId: 'ex7', sets: 1, distance: 3, reps: 1 }, // Бег
+      { exerciseId: 'ex7', sets: 1, distance: 3, duration: 1200, reps: 1 }, // Бег
       { exerciseId: 'ex6', sets: 3, duration: 60, reps: 1 }, // Планка
     ],
   },
