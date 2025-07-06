@@ -1,7 +1,9 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -58,6 +60,7 @@ function WorkoutCard({
     onView: () => void,
     onStartOver: () => void
 }) {
+  const router = useRouter();
   const workoutExercises = workout.exercises
     .map((we) => exercises.find((e) => e.id === we.exerciseId))
     .filter((e): e is Exercise => !!e);
@@ -65,6 +68,11 @@ function WorkoutCard({
   const muscleGroups = [
     ...new Set(workoutExercises.map((e) => e!.muscleGroup)),
   ];
+
+  const handleStartNew = () => {
+    onStartOver();
+    router.push(`/workouts/${workout.id}`);
+  };
 
   return (
     <Card className="flex flex-col">
@@ -89,12 +97,6 @@ function WorkoutCard({
                   <Edit className="mr-2 h-4 w-4" />
                   Редактировать
                 </DropdownMenuItem>
-                {inProgressLog && (
-                    <DropdownMenuItem onClick={onStartOver}>
-                      <RotateCw className="mr-2 h-4 w-4" />
-                      Начать заново
-                    </DropdownMenuItem>
-                )}
                 <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Удалить
@@ -112,12 +114,25 @@ function WorkoutCard({
           ))}
         </div>
       </CardContent>
-      <CardFooter>
-        <Button asChild className="w-full">
-          <Link href={`/workouts/${workout.id}`}>
-            {inProgressLog ? 'Продолжить тренировку' : 'Начать тренировку'} <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
+      <CardFooter className="flex flex-col items-stretch gap-2">
+        {inProgressLog ? (
+            <>
+                <Button asChild className="w-full">
+                    <Link href={`/workouts/${workout.id}`}>
+                        Продолжить тренировку <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
+                <Button variant="outline" className="w-full" onClick={handleStartNew}>
+                    Начать заново <RotateCw className="ml-2 h-4 w-4" />
+                </Button>
+            </>
+        ) : (
+            <Button asChild className="w-full">
+              <Link href={`/workouts/${workout.id}`}>
+                Начать тренировку <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+        )}
       </CardFooter>
     </Card>
   );
@@ -306,3 +321,5 @@ export default function WorkoutsPage() {
     </div>
   );
 }
+
+    
