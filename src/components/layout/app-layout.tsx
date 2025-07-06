@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -11,6 +12,7 @@ import {
   SidebarInset,
   SidebarTrigger,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -18,8 +20,6 @@ import {
   LayoutDashboard,
   Repeat,
   History,
-  Sparkles,
-  DoorOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -32,8 +32,9 @@ const navItems = [
   { href: "/history", label: "История", icon: History },
 ];
 
-export function AppLayout({ children }: { children: ReactNode }) {
+function AppLayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
 
   const getPageTitle = () => {
     const currentItem = navItems.find((item) => {
@@ -45,10 +46,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
     return "Мои Тренировки";
   };
   
-  const isWorkoutPlayer = pathname.startsWith('/workouts/');
+  const handleLinkClick = () => {
+    setOpenMobile(false);
+  };
 
   return (
-    <SidebarProvider>
+    <>
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
@@ -64,6 +67,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   asChild
                   isActive={pathname === item.href || (item.href === '/workouts' && pathname.startsWith('/workouts/'))}
                   tooltip={{ children: item.label }}
+                  onClick={handleLinkClick}
                 >
                   <Link href={item.href}>
                     <item.icon />
@@ -94,6 +98,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </header>
         <main className="flex-1 p-4 sm:p-6">{children}</main>
       </SidebarInset>
+    </>
+  );
+}
+
+export function AppLayout({ children }: { children: ReactNode }) {
+  return (
+    <SidebarProvider>
+      <AppLayoutContent>{children}</AppLayoutContent>
     </SidebarProvider>
   );
 }

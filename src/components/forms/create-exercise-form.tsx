@@ -143,9 +143,9 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <ScrollArea className="max-h-[70vh] pr-6">
-          <div className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col max-h-[80vh]">
+        <ScrollArea className="pr-6 -mr-6">
+          <div className="space-y-4 pr-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -382,7 +382,7 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
             )}
           </div>
         </ScrollArea>
-        <div className="flex justify-end gap-2 pt-4">
+        <div className="flex justify-end gap-2 pt-4 border-t mt-auto">
           <Button type="button" variant="ghost" onClick={onCancel}>
             Отмена
           </Button>
