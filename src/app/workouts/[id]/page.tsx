@@ -80,6 +80,19 @@ export default function WorkoutPlayerPage() {
     }
   }, [currentExerciseIndex]);
 
+  const handleMarkComplete = useCallback(() => {
+    if (!workout) return;
+    setExerciseStatuses(prev => ({ ...prev, [currentExerciseIndex]: 'completed' }));
+    setExerciseTimerActive(false);
+
+    const restDuration = workout.exercises[currentExerciseIndex]?.restDuration;
+    if (restDuration && restDuration > 0) {
+      setRestTimeLeft(restDuration);
+      setIsResting(true);
+    } else {
+      handleNext();
+    }
+  }, [workout, currentExerciseIndex, handleNext]);
 
   // Auto-start timer when exercise changes
   useEffect(() => {
@@ -100,20 +113,21 @@ export default function WorkoutPlayerPage() {
 
   // Timer for the exercise itself
   useEffect(() => {
-    if (!exerciseTimerActive || exerciseTimeLeft <= 0) {
-      if(exerciseTimeLeft <= 0 && exerciseTimerActive) {
-        setExerciseTimerActive(false);
-        // Optional: Auto-complete or play a sound
-      }
+    if (!exerciseTimerActive) {
       return;
-    };
+    }
+    
+    if (exerciseTimeLeft <= 0) {
+      handleMarkComplete();
+      return;
+    }
 
     const intervalId = setInterval(() => {
       setExerciseTimeLeft((prev) => prev - 1);
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [exerciseTimerActive, exerciseTimeLeft]);
+  }, [exerciseTimerActive, exerciseTimeLeft, handleMarkComplete]);
 
   // Timer for rest periods
   useEffect(() => {
@@ -131,19 +145,6 @@ export default function WorkoutPlayerPage() {
 
     return () => clearInterval(intervalId);
   }, [isResting, restTimeLeft, handleNext]);
-
-  const handleMarkComplete = () => {
-    setExerciseStatuses(prev => ({ ...prev, [currentExerciseIndex]: 'completed' }));
-    setExerciseTimerActive(false);
-
-    const restDuration = workout?.exercises[currentExerciseIndex]?.restDuration;
-    if (restDuration && restDuration > 0) {
-      setRestTimeLeft(restDuration);
-      setIsResting(true);
-    } else {
-      handleNext();
-    }
-  };
 
   const handleSkip = () => {
       setExerciseStatuses(prev => ({ ...prev, [currentExerciseIndex]: 'skipped' }));
