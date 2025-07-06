@@ -106,62 +106,6 @@
   ],
   "workouts": [
     {
-      "id": "w1",
-      "name": "Силовая на все тело A",
-      "description": "Комплексная тренировка на все тело, с фокусом на основные группы мышц.",
-      "exercises": [
-        {
-          "exerciseId": "ex2",
-          "sets": 3,
-          "reps": 8,
-          "weight": 100,
-          "restDuration": 120
-        },
-        {
-          "exerciseId": "ex1",
-          "sets": 3,
-          "reps": 8,
-          "weight": 80,
-          "restDuration": 90
-        },
-        {
-          "exerciseId": "ex3",
-          "sets": 1,
-          "reps": 5,
-          "weight": 120,
-          "restDuration": 180
-        }
-      ]
-    },
-    {
-      "id": "w2",
-      "name": "Силовая на все тело B",
-      "description": "Альтернативная тренировка на все тело для сбалансированной программы.",
-      "exercises": [
-        {
-          "exerciseId": "ex2",
-          "sets": 3,
-          "reps": 8,
-          "weight": 105,
-          "restDuration": 120
-        },
-        {
-          "exerciseId": "ex4",
-          "sets": 3,
-          "reps": 8,
-          "weight": 50,
-          "restDuration": 90
-        },
-        {
-          "exerciseId": "ex5",
-          "sets": 3,
-          "reps": 8,
-          "weight": 10,
-          "restDuration": 60
-        }
-      ]
-    },
-    {
       "id": "w3",
       "name": "Кардио и Кор",
       "description": "Тренировка для улучшения сердечно-сосудистой системы и укрепления кора.",
@@ -186,39 +130,42 @@
   ],
   "workoutLogs": [
     {
-      "id": "log1751806694289",
+      "id": "log1751807100050",
+      "workoutId": "w1",
+      "date": "2025-07-06T13:05:00.050Z",
+      "status": "completed",
+      "currentExerciseIndex": 2,
+      "exerciseStatuses": {
+        "0": "completed",
+        "1": "completed",
+        "2": "completed"
+      },
+      "endTime": "2025-07-06T13:05:05.489Z"
+    },
+    {
+      "id": "log1751807113667",
+      "workoutId": "w2",
+      "date": "2025-07-06T13:05:13.667Z",
+      "status": "completed",
+      "currentExerciseIndex": 2,
+      "exerciseStatuses": {
+        "0": "completed",
+        "1": "completed",
+        "2": "completed"
+      },
+      "endTime": "2025-07-06T13:05:19.801Z"
+    },
+    {
+      "id": "log1751807135052",
       "workoutId": "w3",
-      "date": "2025-07-06T12:58:14.289Z",
-      "status": "in-progress",
+      "date": "2025-07-06T13:05:35.052Z",
+      "status": "completed",
       "currentExerciseIndex": 1,
       "exerciseStatuses": {
         "0": "pending",
-        "1": "pending"
-      }
-    },
-    {
-      "id": "log1751806701593",
-      "workoutId": "w2",
-      "date": "2025-07-06T12:58:21.593Z",
-      "status": "in-progress",
-      "currentExerciseIndex": 2,
-      "exerciseStatuses": {
-        "0": "completed",
-        "1": "completed",
-        "2": "pending"
-      }
-    },
-    {
-      "id": "log1751806970107",
-      "workoutId": "w1",
-      "date": "2025-07-06T13:02:50.107Z",
-      "status": "in-progress",
-      "currentExerciseIndex": 2,
-      "exerciseStatuses": {
-        "0": "completed",
-        "1": "completed",
-        "2": "pending"
-      }
+        "1": "completed"
+      },
+      "endTime": "2025-07-06T13:05:36.969Z"
     }
   ],
   "bodyMeasurements": []

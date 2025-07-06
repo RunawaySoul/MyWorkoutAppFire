@@ -1,20 +1,16 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import type { Workout, Exercise, AppData, WorkoutLog } from '@/lib/types';
-import { PlusCircle, ArrowRight, MoreVertical, Edit, Trash2, Info, RotateCw } from 'lucide-react';
+import { PlusCircle, MoreVertical, Edit, Trash2, Info, RotateCw, ArrowRight, ArrowUpDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -37,114 +33,36 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { CreateWorkoutForm } from '@/components/forms/create-workout-form';
 import { getAppData, saveAppData } from '@/lib/actions';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-function WorkoutCard({ 
-    workout, 
-    exercises, 
-    inProgressLog,
-    onEdit, 
-    onDelete, 
-    onView,
-    onStartOver 
-}: { 
-    workout: Workout, 
-    exercises: Exercise[], 
-    inProgressLog?: WorkoutLog | null,
-    onEdit: () => void, 
-    onDelete: () => void, 
-    onView: () => void,
-    onStartOver: () => void
-}) {
-  const router = useRouter();
-  const workoutExercises = workout.exercises
-    .map((we) => exercises.find((e) => e.id === we.exerciseId))
-    .filter((e): e is Exercise => !!e);
-
-  const muscleGroups = [
-    ...new Set(workoutExercises.map((e) => e!.muscleGroup)),
-  ];
-
-  const handleStartNew = () => {
-    onStartOver();
-    router.push(`/workouts/${workout.id}`);
-  };
-
-  return (
-    <Card className="flex flex-col">
-      <CardHeader>
-        <div className="flex justify-between items-start gap-2">
-            <div>
-              <CardTitle className="font-headline">{workout.name}</CardTitle>
-              <CardDescription>{workout.description}</CardDescription>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onView}>
-                  <Info className="mr-2 h-4 w-4" />
-                  Подробнее
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onEdit}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Редактировать
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Удалить
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
-      </CardHeader>
-      <CardContent className="flex-grow">
-        <div className="flex flex-wrap gap-2">
-          {muscleGroups.map((mg) => (
-            <Badge key={mg} variant="secondary">
-              {mg}
-            </Badge>
-          ))}
-        </div>
-      </CardContent>
-      <CardFooter className="flex flex-col items-stretch gap-2">
-        {inProgressLog ? (
-            <>
-                <Button asChild className="w-full">
-                    <Link href={`/workouts/${workout.id}`}>
-                        Продолжить тренировку <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                </Button>
-                <Button variant="outline" className="w-full" onClick={handleStartNew}>
-                    Начать заново <RotateCw className="ml-2 h-4 w-4" />
-                </Button>
-            </>
-        ) : (
-            <Button asChild className="w-full">
-              <Link href={`/workouts/${workout.id}`}>
-                Начать тренировку <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-        )}
-      </CardFooter>
-    </Card>
-  );
-}
-
 export default function WorkoutsPage() {
+  const router = useRouter();
   const [appData, setAppData] = useState<AppData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [deletingWorkoutId, setDeletingWorkoutId] = useState<string | null>(null);
   const [viewingWorkout, setViewingWorkout] = useState<Workout | null>(null);
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'name', direction: 'asc' });
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -157,6 +75,54 @@ export default function WorkoutsPage() {
     }
     loadData();
   }, []);
+  
+  const workouts = appData?.workouts || [];
+  const exercises = appData?.exercises || [];
+  const workoutLogs = appData?.workoutLogs || [];
+
+  const displayedWorkouts = useMemo(() => {
+    return workouts
+      .filter(w => w.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      .sort((a, b) => {
+        if (!sortConfig.key) return 0;
+        const key = sortConfig.key as keyof Workout | 'exerciseCount';
+
+        let aValue, bValue;
+
+        if (key === 'exerciseCount') {
+          aValue = a.exercises.length;
+          bValue = b.exercises.length;
+        } else {
+          aValue = a[key as keyof Workout] ?? '';
+          bValue = b[key as keyof Workout] ?? '';
+        }
+
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+  }, [workouts, searchTerm, sortConfig]);
+
+  const handleSort = (key: string) => {
+    if(!key) return;
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const handleSelect = (id: string, checked: boolean) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) newSet.add(id);
+      else newSet.delete(id);
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    setSelectedIds(checked ? new Set(displayedWorkouts.map(w => w.id)) : new Set());
+  };
 
   const handleSaveWorkout = async (data: Omit<Workout, 'id'>, id?: string) => {
     if(!appData) return;
@@ -165,10 +131,7 @@ export default function WorkoutsPage() {
     if (id) {
         newWorkouts = appData.workouts.map(w => w.id === id ? { ...w, ...data, id: w.id } : w);
     } else {
-        const newWorkout: Workout = {
-            id: `w${Date.now()}`,
-            ...data,
-        };
+        const newWorkout: Workout = { id: `w${Date.now()}`, ...data };
         newWorkouts = [...appData.workouts, newWorkout];
     }
     const newData = {...appData, workouts: newWorkouts};
@@ -185,6 +148,7 @@ export default function WorkoutsPage() {
     const newData = { ...appData, workoutLogs: updatedLogs };
     await saveAppData(newData);
     setAppData(newData);
+    router.push(`/workouts/${workoutId}`);
   };
 
   const handleOpenCreateDialog = () => {
@@ -209,13 +173,25 @@ export default function WorkoutsPage() {
   const handleDeleteWorkout = async () => {
     if (deletingWorkoutId && appData) {
         const newWorkouts = appData.workouts.filter(w => w.id !== deletingWorkoutId);
-        const newData = {...appData, workouts: newWorkouts };
+        const newLogs = appData.workoutLogs.filter(l => l.workoutId !== deletingWorkoutId);
+        const newData = {...appData, workouts: newWorkouts, workoutLogs: newLogs };
         await saveAppData(newData);
         setAppData(newData);
     }
     setIsAlertOpen(false);
     setDeletingWorkoutId(null);
   };
+  
+  const handleConfirmBulkDelete = async () => {
+    if (!appData) return;
+    const newWorkouts = workouts.filter(w => !selectedIds.has(w.id));
+    const newLogs = workoutLogs.filter(l => !selectedIds.has(l.workoutId));
+    const newData = {...appData, workouts: newWorkouts, workoutLogs: newLogs };
+    await saveAppData(newData);
+    setAppData(newData);
+    setSelectedIds(new Set());
+    setIsBulkDeleteAlertOpen(false);
+  }
 
   const handleCancelDialog = () => {
     setIsDialogOpen(false);
@@ -225,8 +201,6 @@ export default function WorkoutsPage() {
   if (!appData) {
     return <div>Загрузка тренировок...</div>;
   }
-  
-  const { workouts, exercises, workoutLogs } = appData;
 
   return (
     <div className="flex flex-col gap-4">
@@ -253,34 +227,162 @@ export default function WorkoutsPage() {
           </DialogContent>
         </Dialog>
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {workouts.map((workout) => {
-          const inProgressLog = workoutLogs.find(log => log.workoutId === workout.id && log.status === 'in-progress');
-          return (
-            <WorkoutCard 
-              key={workout.id} 
-              workout={workout} 
-              exercises={exercises}
-              inProgressLog={inProgressLog}
-              onView={() => handleOpenViewDialog(workout)}
-              onEdit={() => handleOpenEditDialog(workout)}
-              onDelete={() => handleOpenDeleteAlert(workout.id)}
-              onStartOver={() => handleStartOver(workout.id)}
+
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          <div className="flex flex-col md:flex-row gap-2">
+            <Input
+              placeholder="Поиск по названию..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-sm"
             />
-          )
-        })}
+          </div>
+          {selectedIds.size > 0 && (
+            <div className="flex items-center justify-between p-2 bg-muted rounded-md">
+              <span className="text-sm font-medium">{selectedIds.size} выбрано</span>
+              <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteAlertOpen(true)}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Удалить выбранные
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[50px]">
+                <Checkbox
+                  checked={selectedIds.size > 0 && displayedWorkouts.length > 0 && selectedIds.size === displayedWorkouts.length}
+                  onCheckedChange={(checked) => handleSelectAll(checked === true)}
+                />
+              </TableHead>
+              <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
+                <div className="flex items-center gap-2">
+                  Название
+                  {sortConfig.key === 'name' && <ArrowUpDown className="h-4 w-4 text-muted-foreground" />}
+                </div>
+              </TableHead>
+              <TableHead className="hidden md:table-cell">Описание</TableHead>
+              <TableHead className="cursor-pointer hidden lg:table-cell" onClick={() => handleSort('exerciseCount')}>
+                <div className="flex items-center gap-2">
+                  Упражнений
+                  {sortConfig.key === 'exerciseCount' && <ArrowUpDown className="h-4 w-4 text-muted-foreground" />}
+                </div>
+              </TableHead>
+              <TableHead>Группы мышц</TableHead>
+              <TableHead className="text-right w-[80px]">Действия</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {displayedWorkouts.length > 0 ? (
+              displayedWorkouts.map((workout) => {
+                const inProgressLog = workoutLogs.find(log => log.workoutId === workout.id && log.status === 'in-progress');
+                const workoutExercises = workout.exercises
+                  .map((we) => exercises.find((e) => e.id === we.exerciseId))
+                  .filter((e): e is Exercise => !!e);
+                const muscleGroups = [...new Set(workoutExercises.map((e) => e.muscleGroup))];
+
+                return (
+                  <TableRow key={workout.id} data-state={selectedIds.has(workout.id) ? "selected" : ""}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(workout.id)}
+                        onCheckedChange={(checked) => handleSelect(workout.id, checked === true)}
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium">{workout.name}</TableCell>
+                    <TableCell className="text-muted-foreground hidden md:table-cell max-w-xs truncate">{workout.description}</TableCell>
+                    <TableCell className="hidden lg:table-cell">{workout.exercises.length}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {muscleGroups.slice(0, 3).map((mg) => (
+                          <Badge key={mg} variant="secondary">{mg}</Badge>
+                        ))}
+                        {muscleGroups.length > 3 && <Badge variant="outline">...</Badge>}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                           {inProgressLog ? (
+                              <>
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/workouts/${workout.id}`}>Продолжить <ArrowRight className="ml-auto" /></Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleStartOver(workout.id)}>
+                                    Начать заново <RotateCw className="ml-auto" />
+                                </DropdownMenuItem>
+                              </>
+                            ) : (
+                              <DropdownMenuItem asChild>
+                                <Link href={`/workouts/${workout.id}`}>Начать <ArrowRight className="ml-auto" /></Link>
+                              </DropdownMenuItem>
+                            )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleOpenViewDialog(workout)}>
+                            <Info className="mr-2 h-4 w-4" />
+                            Подробнее
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleOpenEditDialog(workout)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Редактировать
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleOpenDeleteAlert(workout.id)} className="text-destructive focus:text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Удалить
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center h-24">
+                  Тренировки не найдены.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
-       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+       
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
             <AlertDialogDescription>
-              Это действие необратимо. Тренировка будет навсегда удалена.
+              Это действие необратимо. Тренировка и вся связанная с ней история будут навсегда удалены.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeletingWorkoutId(null)}>Отмена</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteWorkout} className="bg-destructive hover:bg-destructive/90">Удалить</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Это действие необратимо. {selectedIds.size} тренировки и вся связанная с ними история будут навсегда удалены.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Удалить</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -321,5 +423,3 @@ export default function WorkoutsPage() {
     </div>
   );
 }
-
-    
