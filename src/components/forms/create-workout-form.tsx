@@ -68,23 +68,28 @@ export function CreateWorkoutForm({
       exercises: [],
     },
   });
+  
+  const { fields, append, remove, replace } = useFieldArray({
+    control: form.control,
+    name: 'exercises',
+  });
 
   useEffect(() => {
     if (initialData) {
-        form.reset(initialData);
+        form.reset({
+            name: initialData.name,
+            description: initialData.description,
+        });
+        // useFieldArray's `replace` is recommended for resetting the array
+        replace(initialData.exercises);
     } else {
         form.reset({
             name: '',
             description: '',
-            exercises: [],
         });
+        replace([]);
     }
-  }, [initialData, form]);
-
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: 'exercises',
-  });
+  }, [initialData, form, replace]);
 
   const handleAddExercise = () => {
     const exerciseToAdd = allExercises.find(

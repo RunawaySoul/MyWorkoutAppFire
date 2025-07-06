@@ -85,7 +85,7 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
             name: '',
             description: '',
             muscleGroup: '',
-            color: '#34d399',
+            color: '#16a34a',
             type: undefined,
             defaultSets: undefined,
             defaultReps: undefined,
@@ -180,7 +180,7 @@ export function CreateExerciseForm({ onFormSubmit, onCancel, initialData }: Crea
                 <FormControl>
                   <div className="flex items-center gap-2">
                     <Input type="color" {...field} className="w-12 h-10 p-1" value={field.value || '#000000'} />
-                    <Input placeholder="#34d399" {...field} />
+                    <Input placeholder="#16a34a" {...field} />
                   </div>
                 </FormControl>
                 <FormMessage />

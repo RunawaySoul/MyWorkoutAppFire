@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getAppData } from '@/lib/actions';
 import {
   Activity,
   ArrowRight,
@@ -9,7 +10,12 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const { workouts, exercises } = await getAppData();
+
+  const totalWorkouts = workouts.length;
+  const totalExercises = exercises.length;
+
   return (
     <div className="flex flex-col gap-8">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -21,8 +27,8 @@ export default function DashboardPage() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">+2 за последний месяц</p>
+            <div className="text-2xl font-bold">{totalWorkouts}</div>
+            <p className="text-xs text-muted-foreground">создано в приложении</p>
           </CardContent>
         </Card>
         <Card>
@@ -33,9 +39,9 @@ export default function DashboardPage() {
             <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5ч 21м</div>
+            <div className="text-2xl font-bold">0ч 0м</div>
             <p className="text-xs text-muted-foreground">
-              +45м за последний месяц
+              данные еще не собраны
             </p>
           </CardContent>
         </Card>
@@ -47,9 +53,9 @@ export default function DashboardPage() {
             <Dumbbell className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">53</div>
+            <div className="text-2xl font-bold">{totalExercises}</div>
             <p className="text-xs text-muted-foreground">
-              +5 новых в этом месяце
+              в вашей библиотеке
             </p>
           </CardContent>
         </Card>

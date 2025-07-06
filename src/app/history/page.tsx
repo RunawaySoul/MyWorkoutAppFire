@@ -60,22 +60,30 @@ export default function HistoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {workoutLogs.map((log) => {
-                  const workout = workouts.find((w) => w.id === log.workoutId);
-                  return (
-                    <TableRow key={log.id}>
-                      <TableCell className="font-medium">
-                        {workout?.name || "Неизвестная тренировка"}
-                      </TableCell>
-                      <TableCell>
-                        {format(parseISO(log.date), "PPP", { locale: ru })}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {log.duration} мин
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {workoutLogs.length > 0 ? (
+                  workoutLogs.map((log) => {
+                    const workout = workouts.find((w) => w.id === log.workoutId);
+                    return (
+                      <TableRow key={log.id}>
+                        <TableCell className="font-medium">
+                          {workout?.name || "Неизвестная тренировка"}
+                        </TableCell>
+                        <TableCell>
+                          {format(parseISO(log.date), "PPP", { locale: ru })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {log.duration} мин
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="h-24 text-center">
+                      История тренировок пуста.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -90,36 +98,42 @@ export default function HistoryPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[250px] w-full">
-              <LineChart data={chartData}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  fontSize={12}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  fontSize={12}
-                  domain={["dataMin - 2", "dataMax + 2"]}
-                />
-                <Tooltip
-                  cursor={false}
-                  content={<ChartTooltipContent indicator="dot" />}
-                />
-                <Line
-                  dataKey="weight"
-                  type="monotone"
-                  stroke="var(--color-weight)"
-                  strokeWidth={2}
-                  dot={true}
-                />
-              </LineChart>
-            </ChartContainer>
+            {chartData.length > 0 ? (
+              <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                <LineChart data={chartData}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    fontSize={12}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    fontSize={12}
+                    domain={["dataMin - 2", "dataMax + 2"]}
+                  />
+                  <Tooltip
+                    cursor={false}
+                    content={<ChartTooltipContent indicator="dot" />}
+                  />
+                  <Line
+                    dataKey="weight"
+                    type="monotone"
+                    stroke="var(--color-weight)"
+                    strokeWidth={2}
+                    dot={true}
+                  />
+                </LineChart>
+              </ChartContainer>
+            ) : (
+                <div className="flex h-[250px] w-full items-center justify-center rounded-md border border-dashed bg-muted/50">
+                    <p className="text-sm text-muted-foreground">Нет данных о весе для отображения.</p>
+                </div>
+            )}
           </CardContent>
         </Card>
       </div>

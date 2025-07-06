@@ -112,9 +112,9 @@ export const workouts: Workout[] = [
     name: 'Силовая на все тело A',
     description: 'Комплексная тренировка на все тело, с фокусом на основные группы мышц.',
     exercises: [
-      { exerciseId: 'ex2', sets: 3, reps: 8, weight: 100 }, // Приседания
-      { exerciseId: 'ex1', sets: 3, reps: 8, weight: 80 }, // Жим лежа
-      { exerciseId: 'ex3', sets: 1, reps: 5, weight: 120 }, // Становая тяга
+      { exerciseId: 'ex2', sets: 3, reps: 8, weight: 100, restDuration: 120 },
+      { exerciseId: 'ex1', sets: 3, reps: 8, weight: 80, restDuration: 90 },
+      { exerciseId: 'ex3', sets: 1, reps: 5, weight: 120, restDuration: 180 },
     ],
   },
   {
@@ -122,9 +122,9 @@ export const workouts: Workout[] = [
     name: 'Силовая на все тело B',
     description: 'Альтернативная тренировка на все тело для сбалансированной программы.',
     exercises: [
-      { exerciseId: 'ex2', sets: 3, reps: 8, weight: 105 }, // Приседания
-      { exerciseId: 'ex4', sets: 3, reps: 8, weight: 50 }, // Армейский жим
-      { exerciseId: 'ex5', sets: 3, reps: 8, weight: 10 }, // Подтягивания
+      { exerciseId: 'ex2', sets: 3, reps: 8, weight: 105, restDuration: 120 },
+      { exerciseId: 'ex4', sets: 3, reps: 8, weight: 50, restDuration: 90 },
+      { exerciseId: 'ex5', sets: 3, reps: 8, weight: 10, restDuration: 60 },
     ],
   },
   {
@@ -132,26 +132,12 @@ export const workouts: Workout[] = [
     name: 'Кардио и Кор',
     description: 'Тренировка для улучшения сердечно-сосудистой системы и укрепления кора.',
     exercises: [
-      { exerciseId: 'ex7', sets: 1, distance: 3, duration: 1200, reps: 1 }, // Бег
-      { exerciseId: 'ex6', sets: 3, duration: 60, reps: 1 }, // Планка
+      { exerciseId: 'ex7', sets: 1, distance: 3, duration: 1200, reps: 1, restDuration: 0 },
+      { exerciseId: 'ex6', sets: 3, duration: 60, reps: 1, restDuration: 30 },
     ],
   },
 ];
 
-export const workoutLogs: WorkoutLog[] = [
-    { id: 'log1', workoutId: 'w1', date: '2024-07-01T08:00:00Z', duration: 60 },
-    { id: 'log2', workoutId: 'w2', date: '2024-07-03T08:00:00Z', duration: 55 },
-    { id: 'log3', workoutId: 'w3', date: '2024-07-05T08:00:00Z', duration: 45 },
-    { id: 'log4', workoutId: 'w1', date: '2024-07-08T08:00:00Z', duration: 65 },
-    { id: 'log5', workoutId: 'w2', date: '2024-07-10T08:00:00Z', duration: 58 },
-    { id: 'log6', workoutId: 'w3', date: '2024-07-12T08:00:00Z', duration: 48 },
-];
+export const workoutLogs: WorkoutLog[] = [];
 
-export const bodyMeasurements: BodyMeasurement[] = [
-    { date: '2024-05-01', weight: 85.5 },
-    { date: '2024-05-15', weight: 85.0 },
-    { date: '2024-06-01', weight: 84.7 },
-    { date: '2024-06-15', weight: 84.2 },
-    { date: '2024-07-01', weight: 83.9 },
-    { date: '2024-07-15', weight: 83.5 },
-];
+export const bodyMeasurements: BodyMeasurement[] = [];
