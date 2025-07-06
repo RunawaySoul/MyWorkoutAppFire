@@ -16,57 +16,57 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Workouts
+              Всего тренировок
             </CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">+2 since last month</p>
+            <p className="text-xs text-muted-foreground">+2 за последний месяц</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Time Under Tension
+              Время под нагрузкой
             </CardTitle>
             <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5h 21m</div>
+            <div className="text-2xl font-bold">5ч 21м</div>
             <p className="text-xs text-muted-foreground">
-              +45m since last month
+              +45м за последний месяц
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Exercises Mastered
+              Освоено упражнений
             </CardTitle>
             <Dumbbell className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">53</div>
             <p className="text-xs text-muted-foreground">
-              +5 new exercises this month
+              +5 новых в этом месяце
             </p>
           </CardContent>
         </Card>
         <Card className="bg-primary/5 dark:bg-primary/10 border-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              AI Workout Suggester
+              AI-ассистент
             </CardTitle>
             <Sparkles className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-sm">
-              Need inspiration? Get a new workout plan based on your goals.
+              Нужно вдохновение? Получите новый план тренировок.
             </div>
             <Button asChild size="sm" className="mt-2">
               <Link href="/ai-suggester">
-                Try Now <ArrowRight />
+                Попробовать <ArrowRight />
               </Link>
             </Button>
           </CardContent>
@@ -75,10 +75,10 @@ export default function DashboardPage() {
       <div>
         <Card>
           <CardHeader>
-            <CardTitle>Recent Workouts</CardTitle>
+            <CardTitle>Недавние тренировки</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>Your recent workout history will appear here.</p>
+            <p>Здесь будет отображаться история ваших недавних тренировок.</p>
           </CardContent>
         </Card>
       </div>

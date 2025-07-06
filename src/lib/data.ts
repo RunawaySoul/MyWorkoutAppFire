@@ -3,73 +3,73 @@ import type { Exercise, Workout, WorkoutLog, BodyMeasurement } from './types';
 export const exercises: Exercise[] = [
   {
     id: 'ex1',
-    name: 'Barbell Bench Press',
-    description: 'Lie on a flat bench and press a barbell up from your chest.',
+    name: 'Жим лежа',
+    description: 'Лягте на горизонтальную скамью и выжмите штангу от груди.',
     type: 'weighted',
-    muscleGroup: 'Chest',
+    muscleGroup: 'Грудь',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'barbell bench',
   },
   {
     id: 'ex2',
-    name: 'Squat',
-    description: 'Lower your hips from a standing position and then stand back up.',
+    name: 'Приседания со штангой',
+    description: 'Опустите бедра из положения стоя, а затем вернитесь в исходное положение.',
     type: 'weighted',
-    muscleGroup: 'Legs',
+    muscleGroup: 'Ноги',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'barbell squat',
   },
   {
     id: 'ex3',
-    name: 'Deadlift',
-    description: 'Lift a loaded barbell or bar off the ground to the hips, then controllably lower it back to the ground.',
+    name: 'Становая тяга',
+    description: 'Поднимите нагруженную штангу с пола до уровня бедер, затем контролируемо опустите ее обратно.',
     type: 'weighted',
-    muscleGroup: 'Back',
+    muscleGroup: 'Спина',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'barbell deadlift',
   },
   {
     id: 'ex4',
-    name: 'Overhead Press',
-    description: 'Press a barbell or dumbbells from your shoulders to overhead.',
+    name: 'Армейский жим',
+    description: 'Выжмите штангу или гантели от плеч над головой.',
     type: 'weighted',
-    muscleGroup: 'Shoulders',
+    muscleGroup: 'Плечи',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'overhead press',
   },
   {
     id: 'ex5',
-    name: 'Pull Up',
-    description: 'Lift your body up with your arms until your chin is over the bar.',
+    name: 'Подтягивания',
+    description: 'Поднимите тело вверх руками, пока подбородок не окажется над перекладиной.',
     type: 'weighted',
-    muscleGroup: 'Back',
+    muscleGroup: 'Спина',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'man pullup',
   },
   {
     id: 'ex6',
-    name: 'Plank',
-    description: 'Hold a push-up position, resting on your forearms.',
+    name: 'Планка',
+    description: 'Удерживайте положение, как при отжиманиях, опираясь на предплечья.',
     type: 'timed',
-    muscleGroup: 'Core',
+    muscleGroup: 'Кор',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'woman plank',
   },
    {
     id: 'ex7',
-    name: 'Running',
-    description: 'Run at a steady pace on a treadmill or outdoors.',
+    name: 'Бег',
+    description: 'Бегите в постоянном темпе на беговой дорожке или на улице.',
     type: 'distance',
-    muscleGroup: 'Cardio',
+    muscleGroup: 'Кардио',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'woman running',
   },
   {
     id: 'ex8',
-    name: 'Dumbbell Curl',
-    description: 'Curl dumbbells up towards your shoulders, keeping your elbows stationary.',
+    name: 'Сгибание рук с гантелями',
+    description: 'Сгибайте руки с гантелями к плечам, держа локти неподвижно.',
     type: 'weighted',
-    muscleGroup: 'Biceps',
+    muscleGroup: 'Бицепс',
     imageUrl: 'https://placehold.co/600x400.png',
     aiHint: 'dumbbell curl',
   },
@@ -78,31 +78,31 @@ export const exercises: Exercise[] = [
 export const workouts: Workout[] = [
   {
     id: 'w1',
-    name: 'Full Body Strength A',
-    description: 'A comprehensive full-body workout focusing on major muscle groups.',
+    name: 'Силовая на все тело A',
+    description: 'Комплексная тренировка на все тело, с фокусом на основные группы мышц.',
     exercises: [
-      { exerciseId: 'ex2', sets: 3, reps: 8 }, // Squat
-      { exerciseId: 'ex1', sets: 3, reps: 8 }, // Bench Press
-      { exerciseId: 'ex3', sets: 1, reps: 5 }, // Deadlift
+      { exerciseId: 'ex2', sets: 3, reps: 8 }, // Приседания
+      { exerciseId: 'ex1', sets: 3, reps: 8 }, // Жим лежа
+      { exerciseId: 'ex3', sets: 1, reps: 5 }, // Становая тяга
     ],
   },
   {
     id: 'w2',
-    name: 'Full Body Strength B',
-    description: 'An alternative full-body session to balance your routine.',
+    name: 'Силовая на все тело B',
+    description: 'Альтернативная тренировка на все тело для сбалансированной программы.',
     exercises: [
-      { exerciseId: 'ex2', sets: 3, reps: 8 }, // Squat
-      { exerciseId: 'ex4', sets: 3, reps: 8 }, // Overhead Press
-      { exerciseId: 'ex5', sets: 3, reps: 8 }, // Pull Up
+      { exerciseId: 'ex2', sets: 3, reps: 8 }, // Приседания
+      { exerciseId: 'ex4', sets: 3, reps: 8 }, // Армейский жим
+      { exerciseId: 'ex5', sets: 3, reps: 8 }, // Подтягивания
     ],
   },
   {
     id: 'w3',
-    name: 'Cardio & Core',
-    description: 'A workout to boost cardiovascular health and strengthen your core.',
+    name: 'Кардио и Кор',
+    description: 'Тренировка для улучшения сердечно-сосудистой системы и укрепления кора.',
     exercises: [
-      { exerciseId: 'ex7', sets: 1, distance: 3000 }, // Running
-      { exerciseId: 'ex6', sets: 3, duration: 60 }, // Plank
+      { exerciseId: 'ex7', sets: 1, distance: 3000 }, // Бег
+      { exerciseId: 'ex6', sets: 3, duration: 60 }, // Планка
     ],
   },
 ];

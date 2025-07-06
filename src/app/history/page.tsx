@@ -25,17 +25,18 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { workoutLogs, workouts, bodyMeasurements } from "@/lib/data";
 import { format, parseISO } from "date-fns";
+import { ru } from 'date-fns/locale';
 
 const chartConfig = {
   weight: {
-    label: "Weight (kg)",
+    label: "Вес (кг)",
     color: "hsl(var(--primary))",
   },
 } satisfies ChartConfig;
 
 export default function HistoryPage() {
   const chartData = bodyMeasurements.map((m) => ({
-    date: format(new Date(m.date), "MMM d"),
+    date: format(new Date(m.date), "MMM d", { locale: ru }),
     weight: m.weight,
   }));
 
@@ -44,18 +45,18 @@ export default function HistoryPage() {
       <div className="lg:col-span-3">
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Workout Logs</CardTitle>
+            <CardTitle className="font-headline">Журнал тренировок</CardTitle>
             <CardDescription>
-              A history of your completed workouts.
+              История ваших завершенных тренировок.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Workout</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Duration</TableHead>
+                  <TableHead>Тренировка</TableHead>
+                  <TableHead>Дата</TableHead>
+                  <TableHead className="text-right">Длительность</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -64,13 +65,13 @@ export default function HistoryPage() {
                   return (
                     <TableRow key={log.id}>
                       <TableCell className="font-medium">
-                        {workout?.name || "Unknown Workout"}
+                        {workout?.name || "Неизвестная тренировка"}
                       </TableCell>
                       <TableCell>
-                        {format(parseISO(log.date), "PPP")}
+                        {format(parseISO(log.date), "PPP", { locale: ru })}
                       </TableCell>
                       <TableCell className="text-right">
-                        {log.duration} min
+                        {log.duration} мин
                       </TableCell>
                     </TableRow>
                   );
@@ -83,9 +84,9 @@ export default function HistoryPage() {
       <div className="lg:col-span-2">
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Body Weight Progress</CardTitle>
+            <CardTitle className="font-headline">Прогресс веса</CardTitle>
             <CardDescription>
-              Track your weight changes over time.
+              Отслеживайте изменения вашего веса со временем.
             </CardDescription>
           </CardHeader>
           <CardContent>

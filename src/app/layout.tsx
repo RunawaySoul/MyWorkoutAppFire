@@ -4,9 +4,9 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'MyWorkout',
+  title: 'Мои Тренировки',
   description:
-    'Your best assistant for keeping a workout journal. Create, copy, organize and play workouts and exercises. Choose a training program, keep a diary, record results and watch your progress.',
+    'Ваш лучший помощник для ведения дневника тренировок. Создавайте, копируйте, организовывайте и выполняйте тренировки и упражнения. Выбирайте программу тренировок, ведите дневник, записывайте результаты и наблюдайте за своим прогрессом.',
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ru" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

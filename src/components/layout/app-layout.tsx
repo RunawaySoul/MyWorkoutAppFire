@@ -25,21 +25,24 @@ import { usePathname } from "next/navigation";
 import { type ReactNode } from "react";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/workouts", label: "Workouts", icon: Repeat },
-  { href: "/exercises", label: "Exercises", icon: Dumbbell },
-  { href: "/history", label: "History", icon: History },
-  { href: "/ai-suggester", label: "AI Suggester", icon: Sparkles },
+  { href: "/", label: "Панель", icon: LayoutDashboard },
+  { href: "/workouts", label: "Тренировки", icon: Repeat },
+  { href: "/exercises", label: "Упражнения", icon: Dumbbell },
+  { href: "/history", label: "История", icon: History },
+  { href: "/ai-suggester", label: "AI-ассистент", icon: Sparkles },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const getPageTitle = () => {
-    const currentItem = navItems.find((item) => item.href === pathname);
+    const currentItem = navItems.find((item) => {
+      if (item.href === '/') return pathname === '/';
+      return pathname.startsWith(item.href)
+    });
     if (currentItem) return currentItem.label;
-    if (pathname.startsWith('/workouts/')) return 'Workout Player';
-    return "MyWorkout";
+    if (pathname.startsWith('/workouts/')) return 'Плеер тренировки';
+    return "Мои Тренировки";
   };
 
   return (
@@ -48,7 +51,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <SidebarHeader>
           <div className="flex items-center gap-2">
             <Dumbbell className="h-8 w-8 text-primary" />
-            <span className="font-bold text-lg">MyWorkout</span>
+            <span className="font-bold text-lg">Мои Тренировки</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -72,10 +75,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3">
             <Avatar>
               <AvatarImage src="https://placehold.co/40x40.png" alt="User" />
-              <AvatarFallback>U</AvatarFallback>
+              <AvatarFallback>П</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold">User</span>
+              <span className="text-sm font-semibold">Пользователь</span>
               <span className="text-xs text-muted-foreground">user@email.com</span>
             </div>
           </div>
