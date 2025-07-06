@@ -1,18 +1,42 @@
+"use client";
+
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAppData } from '@/lib/actions';
+import type { AppData } from '@/lib/types';
 import {
   Activity,
   ArrowRight,
   Dumbbell,
   Sparkles,
   Zap,
+  RotateCw,
 } from 'lucide-react';
 import Link from 'next/link';
 import { differenceInSeconds } from 'date-fns';
 
-export default async function DashboardPage() {
-  const { workouts, exercises, workoutLogs } = await getAppData();
+export default function DashboardPage() {
+  const [appData, setAppData] = useState<AppData | null>(null);
+
+  useEffect(() => {
+    // Data is fetched on the client side from localStorage or initial file
+    const data = getAppData();
+    setAppData(data);
+  }, []);
+
+  if (!appData) {
+    return (
+        <div className="flex flex-col gap-8">
+            <div className="flex items-center justify-center text-muted-foreground">
+                <RotateCw className="mr-2 h-4 w-4 animate-spin" />
+                Загрузка данных...
+            </div>
+        </div>
+    );
+  }
+
+  const { workouts, exercises, workoutLogs } = appData;
 
   const totalWorkouts = workouts.length;
   const totalExercises = exercises.length;
@@ -29,7 +53,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -68,24 +92,6 @@ export default async function DashboardPage() {
             <p className="text-xs text-muted-foreground">
               в вашей библиотеке
             </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-primary/5 dark:bg-primary/10 border-primary/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              AI-ассистент
-            </CardTitle>
-            <Sparkles className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm">
-              Нужно вдохновение? Получите новый план тренировок.
-            </div>
-            <Button asChild size="sm" className="mt-2">
-              <Link href="/ai-suggester">
-                Попробовать <ArrowRight />
-              </Link>
-            </Button>
           </CardContent>
         </Card>
       </div>

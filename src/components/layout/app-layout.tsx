@@ -30,7 +30,6 @@ const navItems = [
   { href: "/workouts", label: "Тренировки", icon: Repeat },
   { href: "/exercises", label: "Упражнения", icon: Dumbbell },
   { href: "/history", label: "История", icon: History },
-  { href: "/ai-suggester", label: "AI-ассистент", icon: Sparkles },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
